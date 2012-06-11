@@ -1,0 +1,344 @@
+##############################################################
+##################Variant-Analyzer v1.0#######################
+###################February 15th, 2011########################
+##############################################################
+
+(0) INSTALL
+(1) EXECUTE
+(2) MOTIVATION
+(3) WHAT IT DOES
+(4) HOW IT DOES IT
+(5) INPUT
+(6) OUTPUT
+(7) TIPS FOR RUNNING VARIANT-ANALYZER FASTER
+
+(0) INSTALL
+-----------
+
+To install Variant-Analyzer, open a linux terminal and run the following commands:
+
+tar xvfz variant-analyzer.tar.gz
+cd VARIANT_ANALYZER-1.0
+chmod +x scripts/* variant-analyzer.pl
+
+The following modules are used by Variant-Analyzer, make sure they are installed before running it:
+
+use Getopt::Long;
+use Bio::Seq;
+use Bio::SeqUtils;
+use Bio::SeqIO;
+use POSIX qw(ceil floor);
+use Bio::Index::Fasta;
+use Bio::Seq;
+
+
+(1) EXECUTE
+-----------
+
+(1.1) Place your EXONS, REFERENCE and Genomic Variations (GVs) in VCF or TAB format (see INPUT section for details on each 
+input file) in the VARIANT_ANALYZER-1.0 folder. 
+
+(1.2) Run
+
+ ./variant-analyzer.pl -e EXONS -r REFERENCE (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [--circos]
+
+the --circos option is optional and is pursued as the very last step, after all the genomic variants were applied to the transcripts. 
+
+(2) MOTIVATION
+--------------
+
+Variant-Analyzer is conceived as an alternative to previous tools that are tightly linked to DBs (e.g. Ensembl, UCSC) and for which 
+there is no overall assessment of the impact of co-occurring GVs on protein-coding transcripts. The former makes it hard for people 
+that is working with newly sequenced genomes, genomes that are not available in such databases, or that just have an alternative 
+annotation of 
+transcript models for which the impact of different GVs needs to be asssessed. The latter is misleading at the moment of evaluating 
+the impact of multiple co-occurring GVs on protein-coding transcripts. For example, a 1 bp insertion and a 1 bp deletion may occur on 
+the same transcript, and, if assessed independently, they cause disruption of the ORF, but together cancel each other, restoring the 
+ORF. In the same way, 2 substitutions on a same codon may result in a different amino acid change than each substitution 
+independently. 
+
+
+(3) WHAT IT DOES
+----------------
+
+Variant-Analyzer takes as input: 
+(i)   transcript models, 
+(ii)  the genomic DNA where the models reside and 
+(iii) Single Nucleotide Variants (SNV), Insertions (INS) and Deletions (DEL) (collectively called Genomic Variations, or GVs) 
+
+and returns, for each transcript, 
+
+(i)   the cDNA before (called the reference) and after applying the GVs (called the variant), 
+(ii)  the reference and variant protein sequence, 
+(iii) an alignment of the reference and variant cDNA at the exon level, 
+(iv)  a summary of all GVs impacting a protein-coding transcript, with a categorization of the Open Reading Frame (ORF) 
+      in: INTACT, PRESERVED, DISRUPTED or FULLY_DELETED.
+(v)   a number of basic statistics for each type of GV. 
+
+(4) HOW IT DOES IT
+------------------
+
+Variant-Analyzer pursues the following steps:
+
+(4.0) Revises the GV file in order to make sure that they follow the specified format (VCF or TAB). SNV and INS involving non-ACTG are 
+discarded. Lines not following the specified format are discarded. (revise-GV-files.pl)
+(4.1) Extracts the cDNA for each transcript from the genomic DNA, using the transcript model coordinates, (extract-cDNA.pl)
+(4.2) Applies SNPs to the cDNA (apply-SNPs.pl)
+(4.3) Categorizes SNPs according to its impact (or not) on protein-coding transcripts (categorize-SNPs.pl).
+(4.4) Computes stats on SNPs (get-stats-SNPs.pl)
+(4.5) Applies Insertions and Deletions to the cDNA sequences, and computes stats of length distribution 
+(apply-insertions-deletions.pl)
+(4.6) If the --circos flag is used, it enerates the input files for a 
+heatmap visualization of each type of GV and the exons with the Circos 
+tool (Krzywinski et al 2009). The interval length for frequency counts 
+is automatically inferred from the length of the genome.
+
+
+(5) INPUT
+---------
+
+Variant-Analyzer takes the following input:
+
+(5.1) A gff3/gtf file with coding_exon sequences
+
+Parameter: -e
+Each coding exon should represent a part of a protein-coding transcript, and 
+should exclude UTRs. 
+
+Example1: transcript 2L52.1 in C. elegans in gff3 format:
+
+II      Coding_transcript       CDS     1867    1911    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+II      Coding_transcript       CDS     2506    2694    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+II      Coding_transcript       CDS     2738    2888    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+II      Coding_transcript       CDS     2931    3036    .       +       2       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+II      Coding_transcript       CDS     3406    3552    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+II      Coding_transcript       CDS     3802    3984    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+II      Coding_transcript       CDS     4201    4663    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+ 
+Example2: transcript ENST00000371026 in Human, in gtf format:
+
+chr1    hg18_ensGene    CDS     67052404        67052451        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67060632        67060788        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67065091        67065317        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67066083        67066181        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67071856        67071977        0.000000        -       2       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67072262        67072419        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67073897        67074048        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67075981        67076067        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67078740        67078942        0.000000        -       2       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67085755        67085949        0.000000        -       2       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67100418        67100573        0.000000        -       2       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67109641        67109780        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67113052        67113208        0.000000        -       2       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67129425        67129537        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67131500        67131684        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67143472        67143646        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+chr1    hg18_ensGene    CDS     67162933        67163102        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
+
+Note that there are no extra lines regarding gene/5_prime_UTR/3_prime_UTR/etc. 
+
+As you can see, the relevant columns are 
+
+column1: the chromosome/contig
+column4: start coordinate
+column5: end coordinate,
+column7: strand,
+column9: transcript ID
+
+The transcript ID in column9 can be preceded by either 'Parent=' , 'ID=' or 'transcript_id '. 
+
+(5.2) A reference genomic DNA file in FASTA format
+--------------------------------------------------
+
+Parameter: -r
+Self explanatory. Avoid incompatibilities between the transcript coordinates and the chromosomes (e.g. transcripts with coordinates 
+out of boundaries, or including transcripts from chromosomes that are not in the fasta file).
+
+
+(5.3) A list of SNV, INS and DEL in either VCF4.0 format or TAB format
+----------------------------------------------------------------------
+
+Parameter: -v (if using VCF4.0 format) or -t (if using TAB format)
+the Variant Call Format (VCF) was proposed by the 1,000 genomes project consortium as a standard to report variants. Specifications 
+can be found in: 
+
+http://www.1000genomes.org/wiki/Analysis/vcf4.0
+
+The VCF is used by a number of programs that detect SNPs and small indels, including the BCF tools that comes with SAMTools for 
+calling SNPs and small indels 
+
+http://samtools.sourceforge.net/mpileup.shtml
+
+and Dindel
+
+ftp://ftp.sanger.ac.uk/pub4/resources/software/dindel/manual-1.01.pdf
+
+The TAB format is an alternative for the cases where the user doesn't have a VCF file. It is a tab-separated file meant to be easy to 
+generate. 
+
+An example of a SNV line in the TAB input:
+
+SNP	chr1	10469	C	G 
+
+column1: SNP indicates it is a single basepair difference between the reference and the variant.
+column2: chromosome/contig
+column3: coordinate within chromosome/contig
+column4: reference nucleotide at that coordinate
+column5: variant nucleotide at that coordinate
+
+An example of an INS line in the TAB input:
+
+INS	chr1	719490	719491	ATAAT
+
+column1: INS indicates it is an insertion in the variant compared to the reference.
+column2: chromosome/contig
+column3: start coordinate within chromosome/contig
+column4: end coordinate within chromosome/contig 
+column5: insertion sequence
+
+Note1: even though insertions are usually annotated to occur between 2 adjacent basepairs X and X+1, this is not required by 
+Variant-Analyzer. If the start and end coordinate are separated by 1 or more basepairs, the region in between is regarded as a 
+deletion associated with the insertion. For example, if the insertion is annotated to occur betwen basepairs 10 and 20, then basepairs 
+11 to 19 will be deleted.
+
+An example of a DEL line in the TAB input:
+
+DEL	chr1	768120	768122
+
+column1: DEL indicates it is a deletion in the variant compared to the reference.
+column2: chromosome/contig
+column3: start coordinate within chromosome/contig
+column4: end coordinate within chromosome/contig
+
+All base pairs from start to end (including start AND end) are deleted in the variant.
+
+Note2: for INS and DEL the start coordinate HAS to be lesser or equal than the end coordinate, otherwise it will be discarded.
+
+(6) OUTPUT
+----------
+
+Assuming that your files are called:
+
+REFERENCE: the genomic DNA
+GVs: the list of Genomic Variations in either format
+TRANSCRIPTS: gff3 file with the coding exon coordinates
+
+The output of Variant-Analyzer is structured as follows:
+.
+|-- VA_transcripts.gff3: transcripts, GVs impacting them, status of the ORF. See description in section 6.1 below
+|-- VA_categorized_GVs.gvf: each GV and its impact (or not, if silent) on all transcripts. See description in section 6.1 below
+|-- VA_README
+|-- VA_Deletions
+|   |-- distribution_deletions.out: length distribution of all deletions and of those deletions impacting exons.
+|   |-- excluded_GVs.VA_DEL: deletions excluded from the input for not accomplishing the specified format.
+|   |-- kept_GVs.VA_DEL: deletions kept from the input. The ones to be applied to the transcripts. 
+|   `-- kept_GVs.VA_DEL.circos: Circos frequency file for deletions. Designed for heatmap visualization.
+|-- VA_Insertions
+|   |-- distribution_insertions.out: length distribution of all insertions and of those insertions impacting exons.
+|   |-- excluded_GVs.VA_INS: insertions excluded from the input for not accomplishing the specified format.
+|   |-- kept_GVs.VA_INS: deletions kept from the input. The ones to be applied to the transcripts.
+|   `-- kept_GVs.VA_INS.circos: Circos frequency file for insertions. Designed for heatmap visualization.
+|-- VA_SNPs
+|   |-- ambiguous_SNPs.list: SNPs that fall into 2 or more categories by impacting transcripts differently
+|   |-- categorized_SNPs.stat: overall and chromosomal frequencies of SNPs per category.
+|   |-- codon_bias.stat: frequency of the location of the SNP within the codon (1,2, or 3) and its impact as syn/non-syn 
+|   |-- excluded_GVs.VA_SNP: SNPs excluded from the input for not accomplishing the specified format.
+|   |-- kept_GVs.list.VA_SNP: SNPs kept from the input. The ones to be applied to the transcripts. 
+|   `-- kept_GVs.list.VA_SNP.circos: Circos frequency file for deletions. Designed for heatmap visualization.
+|-- VA_Transcripts
+|   |-- exons_nuclear_DNA.gff3.circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
+|   |-- reference_cDNA.exons: reference cDNA shown per exon, per transcript.
+|   |-- reference_cDNA.fasta: reference cDNA for each transcript.
+|   |-- reference_peptides.fasta: reference peptide for each transcript.
+|   |-- reference_variant.alignment: alignment of the reference and variant (i.e. all GVs applied) cDNA
+|   |-- variant.stat: distribution of early stop codons along proteins, frequency of different ORF status and summary of impact of GVs on transcripts
+|   |-- variant_cDNA.exons: variant cDNA shown per exon, per transcript.
+|   |-- variant_cDNA.fasta: variant cDNA for each transcript.
+|   `-- variant_peptides.fasta: variant peptide for each transcript.
+
+(6.1) VA_transcripts.gff3 and VA_categorized_GVs.gvf
+ 
+The Generic Feature Format Version 3 (GFF3) is a widely used and accepted format for representing genomic features such as trnascript 
+models and others. The Genome Variation Format (GVF) is an extension of GFF3 and it is designed to 
+describe the impact of Genomic Variants such as SNV, INS and DEL on different genomic features described in a GFF3 file. Hence, both 
+files are meant to contain complementary information. More details and specifications for both formats can be found at
+
+http://www.sequenceontology.org/
+
+Given this, Variant-Analyzer provides two outputs:
+
+(6.1.1) VA_transcripts.gff3
+
+An example of a transcript in the VA_transcript.gff3 file is shown here:
+
+chr20   variant_analyzer        mRNA    11790883        11830259        .       -       .       ID=ENST00000427835;Note=snp_746931(conservative_missense_codon),ins_66552,del_83066,ORF_DISRUPTED(15.53)
+chr20   variant_analyzer        coding_exon     11790883        11791087        .       -       .       Parent=ENST00000427835
+chr20   variant_analyzer        coding_exon     11830155        11830259        .       -       .       Parent=ENST00000427835
+
+
+For each transcript,Variant-Analyzer provides the coordinates of the overall coding region (mRNA) together with the coordinates for 
+each coding exon. In the first line, The Note tag is used to describe , in a comma separated format,
+
+- all snps impacting the protein-coding transcript, and its categorization,
+- all insertions impacting the protein-coding transcript,
+- all deletions impacting the protein-coding transcript,
+- the overall impact of ALL GVs on the ORF (ORF_INTACT/ORF_DISRUPTED/ORF_PRESERVED/FULLY_DELETED)
+- if the ORF is found disrupted by the GVs provided as input, then a percentage in parenthesis indicates the location within the 
+protein where the stop codon occurs. 
+
+ORF_INTACT: the coding region of the transcript is not impacted by GVs.
+ORF_PRESERVED: the overall impact of GVs on the variant transcript is such that it doesn't introduce an early stop codon, compared to 
+the reference.
+ORF_DISRUPTED: the overall impact of GVs on the	variant transcript is such that it introduces an early stop codon, compared to  
+the reference. 
+FULLY_DELETED: the variant transcript is such that only two, one or zero base pairs of the coding region remain after a deletion 
+event.
+
+Note: the information associated to each GV listed in the GFF3 file (e.g. snp_746931) can be found in the VA_categorized_GVs.gvf file.
+
+(6.1.2) VA_categorized_GVs.gvf
+
+An example of a SNV, INS and DEL in the VA_categorized_GVs.gvf file is shown:
+
+chr15   variant_analyzer        SNV     80988136        80988136        .       +       .       ID=snp_14204;
+Variant_seq=G;Reference_seq=C;Variant_effect=non_conservative_missense_codon 0 mRNA ENST00000258884,ENST00000424700;
+Note=tgc>tgG_C>W_aa122_codon_loc3_RADICAL(215),tgc>tgG_C>W_aa122_codon_loc3_RADICAL(215)
+chr14   variant_analyzer        insertion       90740444        90740445        .       +       .       ID=ins_1;Variant_seq=G;Reference_seq=~;Variant_effect=frameshift_variant 0 mRNA ENST00000380590
+chr14   variant_analyzer        deletion        94935764        94935766        .       +       .       ID=del_9;Variant_seq=-;Reference_seq=~;Variant_effect=inframe_variant 0 mRNA ENST00000380365,ENST00000337425,ENST00000448305
+
+- For each case, columns 1, 4 and 5 represent the chromosome, start and end coordinate of the GV.
+
+In column 8:
+- Variant_seq represents the variant sequence for this GV.
+- Reference_seq represents the reference sequence for each GV.
+- Variant_effect represents the effect that this GV has TOGETHER WITH ALL OTHER GVs IMPACTING THIS TRANSCRIPT according to the GVF 
+format. Hence, if a (for example) 
+deletion by itself disrupts the ORF of the transcript, but the ORF is restored by an insertion downstream, then the Variant_effect 
+field will be "inframe_variant". All GVs impacting a transcript are found in the corresponding GFF3 file.
+- The "Note=" tag for SNPs can be lengthy and it displays the following information:
+-- codon_reference>codon_variant. Note that this codon can come from the + or - strand of the genomic DNA. 
+-- aa_reference>aa_variant.
+-- location of the SNP within the codon (1,2 or 3).
+-- functional impact of the amino acid change for mis-sense mutations together with the associated Grantham Scorein parenthesis.
+
+
+(7) TIPS FOR RUNNING VARIANT-ANALYZER FASTER
+--------------------------------------------
+
+Since Variant-Analyzer doesn't access the data from DBs but instead from flat files, it is expected that some steps (such as 
+extracting the cDNA of the transcripts from a genomic sequence) take a considerable amount of time. A couple of points that can make 
+your execution faster:
+
+- run Variant-Analyzer for different chromosomes separately.
+- If you already went through the step of extraction of cDNA sequences from genomic DNA (the most time-consuming step) and want to 
+re-assess the impact of GVs (for example your list of GVs changed) then you can comment the following line in the variant-analzer.pl script
+
+	system("./scripts/extract-cDNA.pl $exon_file $dna_file");
+
+and move the splice_junctions.tmp file to the VARIANT_ANALYZER-1.0 folder 
+
+	mv VA_Intermediate_Files/splice_junctions.tmp .
+
+(this is done assuming you are in the VARIANT_ANALYZER-1.0 folder)
+
+then run variant-analyzer.pl again.
