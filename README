@@ -1,13 +1,11 @@
-##############################################################
-##################Variant-Analyzer v1.0#######################
-###################February 15th, 2011########################
-##############################################################
+Variant-Analyzer version 0.02 (Nov 21st, 2011)
+==============================================
 
 (0) INSTALL
-(1) EXECUTE
-(2) MOTIVATION
-(3) WHAT IT DOES
-(4) HOW IT DOES IT
+(1) MOTIVATION
+(2) WHAT IT DOES
+(3) HOW IT DOES IT
+(4) HOW TO RUN IT
 (5) INPUT
 (6) OUTPUT
 (7) TIPS FOR RUNNING VARIANT-ANALYZER FASTER
@@ -15,67 +13,57 @@
 (0) INSTALL
 -----------
 
-To install Variant-Analyzer, open a linux terminal and run the following commands:
+To install Variant-Analyzer, open a Linux terminal and run the following commands:
 
 tar xvfz variant-analyzer.tar.gz
 cd VARIANT_ANALYZER-1.0
 chmod +x scripts/* variant-analyzer.pl
 
-The following modules are used by Variant-Analyzer, make sure they are installed before running it:
+The program itself is a Perl script and requires the following Perl modules to be 
+installed on your system:
 
+use Cwd;
 use Getopt::Long;
+use POSIX;
+use File::Basename;
+use List::Util;
+use Bio::Index::Fasta;
 use Bio::Seq;
 use Bio::SeqUtils;
 use Bio::SeqIO;
-use POSIX qw(ceil floor);
-use Bio::Index::Fasta;
 use Bio::Seq;
 
-
-(1) EXECUTE
------------
-
-(1.1) Place your EXONS, REFERENCE and Genomic Variations (GVs) in VCF or TAB format (see INPUT section for details on each 
-input file) in the VARIANT_ANALYZER-1.0 folder. 
-
-(1.2) Run
-
- ./variant-analyzer.pl -e EXONS -r REFERENCE (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [--circos]
-
-the --circos option is optional and is pursued as the very last step, after all the genomic variants were applied to the transcripts. 
-
-(2) MOTIVATION
+(1) MOTIVATION
 --------------
 
 Variant-Analyzer is conceived as an alternative to previous tools that are tightly linked to DBs (e.g. Ensembl, UCSC) and for which 
 there is no overall assessment of the impact of co-occurring GVs on protein-coding transcripts. The former makes it hard for people 
-that is working with newly sequenced genomes, genomes that are not available in such databases, or that just have an alternative 
-annotation of 
-transcript models for which the impact of different GVs needs to be asssessed. The latter is misleading at the moment of evaluating 
-the impact of multiple co-occurring GVs on protein-coding transcripts. For example, a 1 bp insertion and a 1 bp deletion may occur on 
-the same transcript, and, if assessed independently, they cause disruption of the ORF, but together cancel each other, restoring the 
-ORF. In the same way, 2 substitutions on a same codon may result in a different amino acid change than each substitution 
+working with newly sequenced genomes, genomes that are not available in such databases, or who just have an alternative 
+annotation of transcript models for which the impact of different GVs needs to be asssessed. The latter is misleading at the moment of 
+evaluating the impact of multiple co-occurring GVs on protein-coding transcripts. For example, a 1 bp insertion and a 1 bp deletion may 
+occur on the same transcript, and, if assessed independently, they cause disruption of the ORF, but together cancel each other, 
+restoring the ORF. In the same way, 2 substitutions on a same codon may result in a different amino acid change than each substitution 
 independently. 
 
-
-(3) WHAT IT DOES
+(2) WHAT IT DOES
 ----------------
 
-Variant-Analyzer takes as input: 
-(i)   transcript models, 
-(ii)  the genomic DNA where the models reside and 
+Variant-Analyzer takes as input:
+ 
+(i)   transcript models (GFF3 or GTF format), 
+(ii)  the genomic DNA where the models reside and (FASTA format) 
 (iii) Single Nucleotide Variants (SNV), Insertions (INS) and Deletions (DEL) (collectively called Genomic Variations, or GVs) 
 
 and returns, for each transcript, 
 
-(i)   the cDNA before (called the reference) and after applying the GVs (called the variant), 
-(ii)  the reference and variant protein sequence, 
-(iii) an alignment of the reference and variant cDNA at the exon level, 
-(iv)  a summary of all GVs impacting a protein-coding transcript, with a categorization of the Open Reading Frame (ORF) 
+(i)   a summary of all GVs impacting a protein-coding transcript, with a categorization of the Open Reading Frame (ORF) 
       in: INTACT, PRESERVED, DISRUPTED or FULLY_DELETED.
+(ii)  the cDNA before (called the reference) and after applying the GVs (called the variant), 
+(iii) the reference and variant protein sequence, 
+(iv)  an alignment of the reference and variant cDNA at the exon level, 
 (v)   a number of basic statistics for each type of GV. 
 
-(4) HOW IT DOES IT
+(3) HOW IT DOES IT
 ------------------
 
 Variant-Analyzer pursues the following steps:
@@ -88,11 +76,19 @@ discarded. Lines not following the specified format are discarded. (revise-GV-fi
 (4.4) Computes stats on SNPs (get-stats-SNPs.pl)
 (4.5) Applies Insertions and Deletions to the cDNA sequences, and computes stats of length distribution 
 (apply-insertions-deletions.pl)
-(4.6) If the --circos flag is used, it enerates the input files for a 
-heatmap visualization of each type of GV and the exons with the Circos 
-tool (Krzywinski et al 2009). The interval length for frequency counts 
-is automatically inferred from the length of the genome.
+(4.6) If the --circos flag is used, it generates the input files for a 
+heatmap visualization of each type of GV and for the exons with the Circos 
+tool (Krzywinski et al., 2009). The circos data for GVs represents the number
+of base pairs inserted or deleted per interval length. The interval length  
+is automatically inferred from the genome size (interval length = genome size / 1000).
 
+(4) HOW TO RUN IT
+-----------------
+
+ ./variant-analyzer.pl -e EXONS_GFF -r REFERENCE_FASTA (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [-o OUTPUT_DIRECTORY] [--circos]
+
+The -o and --circos options are optional. Writing Circos data files is pursued as the very last step, after all the genomic variants 
+were applied to the transcripts. 
 
 (5) INPUT
 ---------
@@ -135,7 +131,7 @@ chr1    hg18_ensGene    CDS     67131500        67131684        0.000000        
 chr1    hg18_ensGene    CDS     67143472        67143646        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 chr1    hg18_ensGene    CDS     67162933        67163102        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 
-Note that there are no extra lines regarding gene/5_prime_UTR/3_prime_UTR/etc. 
+Note that there are no extra lines regarding gene/5_prime_UTR/3_prime_UTR/etc and different exons belonging to the same transcript have the same ID.
 
 As you can see, the relevant columns are 
 
@@ -145,7 +141,8 @@ column5: end coordinate,
 column7: strand,
 column9: transcript ID
 
-The transcript ID in column9 can be preceded by either 'Parent=' , 'ID=' or 'transcript_id '. 
+Make sure columns are separated by TAB characters (not spaces). The transcript ID in column9 can be 
+preceded by either 'Parent=' , 'ID=' or 'transcript_id '. 
 
 (5.2) A reference genomic DNA file in FASTA format
 --------------------------------------------------
@@ -213,6 +210,14 @@ column4: end coordinate within chromosome/contig
 All base pairs from start to end (including start AND end) are deleted in the variant.
 
 Note2: for INS and DEL the start coordinate HAS to be lesser or equal than the end coordinate, otherwise it will be discarded.
+
+(5.4) Specifying the output directory
+-------------------------------------
+Parameter: -o
+Optional parameter that specifies the output directory for Variant-Analyzer output files. If the specified output directory 
+does not exist, Variant-Analyzer creates it. If omitted, output files are written to a subdirectory in the current directory
+named "output_YYYYMMDD_hhmmss", whereas YYYY, MM, DD, hh, mm, ss denote year, month, day, hour, minute, and second of the
+current date/time.
 
 (6) OUTPUT
 ----------
@@ -325,20 +330,8 @@ field will be "inframe_variant". All GVs impacting a transcript are found in the
 (7) TIPS FOR RUNNING VARIANT-ANALYZER FASTER
 --------------------------------------------
 
-Since Variant-Analyzer doesn't access the data from DBs but instead from flat files, it is expected that some steps (such as 
-extracting the cDNA of the transcripts from a genomic sequence) take a considerable amount of time. A couple of points that can make 
-your execution faster:
-
-- run Variant-Analyzer for different chromosomes separately.
-- If you already went through the step of extraction of cDNA sequences from genomic DNA (the most time-consuming step) and want to 
-re-assess the impact of GVs (for example your list of GVs changed) then you can comment the following line in the variant-analzer.pl script
-
-	system("./scripts/extract-cDNA.pl $exon_file $dna_file");
-
-and move the splice_junctions.tmp file to the VARIANT_ANALYZER-1.0 folder 
-
-	mv VA_Intermediate_Files/splice_junctions.tmp .
-
-(this is done assuming you are in the VARIANT_ANALYZER-1.0 folder)
-
-then run variant-analyzer.pl again.
+Some steps of Variant-Analyzer can take time when run on very large (human sized) data files. However, even in this case 
+Variant-Analyzer should return results in a reasonable amount of time (~1h). One way to speed up execution is to run 
+Variant-Analyzer for different chromosomes separately. Also, consider commenting out lines in the variant-analzer.pl script
+if re-running a particular step of the analysis is not required. For example, by commenting out the line executing
+the 'extract-cDNA.pl' script, Variant-Analyzer would not extract cDNA sequences when it is run again.

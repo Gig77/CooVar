@@ -2,6 +2,9 @@
 
 use strict;
 
+print "[categorize-SNPs.pl] Start executing script on ";
+system(date);
+
 my %ref_cdna=();
 my %tar_cdna=();
 
@@ -28,18 +31,20 @@ sub classify_grantham
         }
         else
         {
-                print STDERR "WARN! Grantham score out of boundary: $grantham_score\n";
+                print "[categorize-SNPs.pl] WARNING: Grantham score out of boundary: $grantham_score\n";
         }
 	return $category;
 }
 
 
-open(D,$ARGV[0]) || die "Ref cDNA: $!\n";		#reference cDNA with start and end position for exons
-open(E,$ARGV[1]) || die "Variant cDNA: $!\n";         #target cDNA with start and end position for exons
-open(F,$ARGV[2]) || die "Grantham matrix: $!\n";		#Grantham Matrix
-open(G,$ARGV[3]) || die "SNPs: $!\n";		#all snps: will be used to categorized those as intronic/intergenic
-open(H,$ARGV[4]) || die "Splice Junction Tmp: $!\n";		#splice junction coordinates
-open(I,$ARGV[5]) || die "gff3 transcripts Tmp: $!\n";		#gff3_trans file for annotating SNPs
+open(D,$ARGV[0]) || die "[categorize-SNPs.pl] $!: $ARGV[0]\n";		#reference cDNA with start and end position for exons
+open(E,$ARGV[1]) || die "[categorize-SNPs.pl] $!: $ARGV[1]\n";         #target cDNA with start and end position for exons
+open(F,$ARGV[2]) || die "[categorize-SNPs.pl] $!: $ARGV[2]\n";		#Grantham Matrix
+open(G,$ARGV[3]) || die "[categorize-SNPs.pl] $!: $ARGV[3]\n";		#all snps: will be used to categorized those as intronic/intergenic
+open(H,$ARGV[4]) || die "[categorize-SNPs.pl] $!: $ARGV[4]\n";		#splice junction coordinates
+open(I,$ARGV[5]) || die "[categorize-SNPs.pl] $!: $ARGV[5]\n";		#gff3_trans file for annotating SNPs
+open(FREQ,">$ARGV[6]") || die "[categorize-SNPs.pl] $!: $ARGV[6]\n";  # snps frequency table
+my $out_dir = $ARGV[7] or die "[categorize-SNPs.pl] output directory not specified\n";
 
 my %translate = (
         # . - stop
@@ -98,12 +103,12 @@ while(<E>)
         chomp($_);
         if($_=~/^\>(\S+)\t(\S+)\t\S+\t\S+\t(\S+)/)
         {
-                $target_id=$1;
-		$target_chrom{$target_id}=$2;
+			$target_id=$1;
+			$target_chrom{$target_id}=$2;
         }
         else
         {
-                $target_seq{$target_id} .=$_ . "\n";
+            $target_seq{$target_id} .=$_ . "\n";
         }
 }
 close(E);
@@ -178,9 +183,8 @@ while(<H>)
 }
 close(H);
 
-open(CAT,">categorized_snp_coords.list");
-open(GVF,">VA_categorized_GVs.gvf");
-
+open(CAT,">$out_dir/VA_Intermediate_Files/categorized_snp_coords.list") || die "[categorize-SNPs.pl] $!: $out_dir/VA_Intermediate_Files/categorized_snp_coords.list\n";
+open(GVF,">$out_dir/VA_categorized_GVs.gvf") || die "[categorize-SNPs.pl] $!: $out_dir/VA_categorized_GVs.gvf\n";
 print GVF "\#\#gff-version 3\n";
 print GVF "\#\#gvf-version 1\.05\n";
 
@@ -189,6 +193,7 @@ my $snp_id = 0;
 
 my %snp2gvf_variant=();
 my %snp2gvf_note=();
+my $freqs = 0;
 
 for my $key (keys %target_seq)
 {
@@ -241,7 +246,7 @@ for my $key (keys %target_seq)
 
 	if(scalar(@seq_ref) != scalar(@seq_tar))
 	{
-		print STDERR "Inconsistent amount of DNA for $key\n";
+		print "[categorize-SNPs.pl] WARNING: Inconsistent amount of DNA for $key\n";
 	}
 
 	my $count_codons=0;
@@ -293,13 +298,13 @@ for my $key (keys %target_seq)
 			elsif(($amino_ref ne $amino_tar) &&  ($amino_tar eq '*'))
 			{
 				$non_sense+=$n_subs;
-                                for(my $k=0;$k<@codon_bias;$k++)
-                                {
+				for(my $k=0;$k<@codon_bias;$k++)
+				{
 					next if ($codon_bias[$k] == 0);
-                                        my $snp=shift @snps;
+					my $snp=shift @snps;
 
 					$snp2gvf_variant{"$snp\_\_stop\_gained"}.= $key . "\,";
-                           		$snp2gvf_note{"$snp\_\_stop\_gained"}.="$codon_ref\>$codon_tar\_$amino_ref\>$amino_tar\_";
+                    $snp2gvf_note{"$snp\_\_stop\_gained"}.="$codon_ref\>$codon_tar\_$amino_ref\>$amino_tar\_";
 					my $codon_pos = $k+1;
                                         $snp2gvf_note{"$snp\_\_stop\_gained"}.="aa$count_codons\_";
                                         $snp2gvf_note{"$snp\_\_stop\_gained"}.="codon_loc$codon_pos\,";
@@ -307,8 +312,7 @@ for my $key (keys %target_seq)
 					print CAT "$snp\t$key\tnon_sense\t$codon_ref\>$codon_tar\t$amino_ref\>$amino_tar\t";
 					print CAT "\t\t", $k+1,"\n";
 					$seen_snps{$snp}++;
-                                }
-
+				}
 			}
 			elsif(($amino_ref ne $amino_tar) &&  ($amino_ref eq '*'))
 			{
@@ -320,11 +324,11 @@ for my $key (keys %target_seq)
 
 					$snp2gvf_variant{"$snp\_\_stop\_lost"}.= $key . "\,";
 					$snp2gvf_note{"$snp\_\_stop\_lost"}.="$codon_ref\>$codon_tar\_$amino_ref\>$amino_tar\_";
-                                        my $codon_pos = $k+1;
-                                        $snp2gvf_note{"$snp\_\_stop\_lost"}.="aa$count_codons\_";
-                                        $snp2gvf_note{"$snp\_\_stop\_lost"}.="codon_loc$codon_pos\,";
+                    my $codon_pos = $k+1;
+                    $snp2gvf_note{"$snp\_\_stop\_lost"}.="aa$count_codons\_";
+                    $snp2gvf_note{"$snp\_\_stop\_lost"}.="codon_loc$codon_pos\,";
 
-                                        print CAT "$snp\t$key\textension\t$codon_ref\>$codon_tar\t$amino_ref\>$amino_tar\t"; 
+                    print CAT "$snp\t$key\textension\t$codon_ref\>$codon_tar\t$amino_ref\>$amino_tar\t"; 
 					print CAT "\t\t", $k+1,"\n";
 					$seen_snps{$snp}++;
                                 }
@@ -333,13 +337,13 @@ for my $key (keys %target_seq)
 			else
 			{
 				$mis_sense+=$n_subs;
-                                for(my $k=0;$k<@codon_bias;$k++)
-                                {
+                for(my $k=0;$k<@codon_bias;$k++)
+                {
 					next if ($codon_bias[$k] == 0);
-                                        my $snp=shift @snps;
+                    my $snp=shift @snps;
 
 					my $coord_grantham = $amino_ref . "_" . $amino_tar;
-                                        print CAT "$snp\t$key\tmis_sense\t$codon_ref\>$codon_tar\t$amino_ref\>$amino_tar\t"; 
+                    print CAT "$snp\t$key\tmis_sense\t$codon_ref\>$codon_tar\t$amino_ref\>$amino_tar\t"; 
 					print CAT "$count_codons\t";
 					my $grantham_category = classify_grantham($grantham{$coord_grantham});
 					print CAT "$grantham_category\($grantham{$coord_grantham}\)\t";
@@ -348,11 +352,11 @@ for my $key (keys %target_seq)
 					if($grantham_category eq 'CONSERVATIVE' || $grantham_category eq 'MODERATELY_CONSERVATIVE')
 					{
 						$snp2gvf_variant{"$snp\_\_conservative\_missense\_codon"}.= $key . "\,";
-			$snp2gvf_note{"$snp\_\_conservative\_missense\_codon"}.="$codon_ref\>$codon_tar\_$amino_ref\>$amino_tar\_";
+						$snp2gvf_note{"$snp\_\_conservative\_missense\_codon"}.="$codon_ref\>$codon_tar\_$amino_ref\>$amino_tar\_";
                         my $codon_pos = $k+1;
                         $snp2gvf_note{"$snp\_\_conservative\_missense\_codon"}.="aa$count_codons\_";
                         $snp2gvf_note{"$snp\_\_conservative\_missense\_codon"}.="codon_loc$codon_pos\_";
-			$snp2gvf_note{"$snp\_\_conservative\_missense\_codon"}.="$grantham_category\($grantham{$coord_grantham}\)\,";
+						$snp2gvf_note{"$snp\_\_conservative\_missense\_codon"}.="$grantham_category\($grantham{$coord_grantham}\)\,";
 					}
 					else
 					{
@@ -371,9 +375,12 @@ for my $key (keys %target_seq)
 		}
 	}
 
-	print "$key\t", length($ref_cdna{$key}), "\t$synonymous\t$mis_sense\t$non_sense\t$extension\t";
-	print 'Total=' , $synonymous + $mis_sense + $non_sense + $extension , "\n";
+	print FREQ "$key\t", length($ref_cdna{$key}), "\t$synonymous\t$mis_sense\t$non_sense\t$extension\t";
+	print FREQ 'Total=' , $synonymous + $mis_sense + $non_sense + $extension , "\n";
+	$freqs ++;
 }
+close(FREQ);
+print "[categorize-SNPs.pl] $freqs lines written to $ARGV[6]\n";
 
 #find SNPs that impact splice junctions
 for my $key (keys %all_snps)
@@ -414,10 +421,11 @@ my $snp_id=1;
 
 my %transcript2snp_id=();
 
+my $gvfs = 0;
 for my $key (keys %snp2gvf_variant)
 {
 	my @snp_type = split(/\_\_/,$key);
-	print $snp_type[0]=~/(\S+)\:(\d+)/;
+	$snp_type[0]=~/(\S+)\:(\d+)/;
 	my $chrom = $1;
 	my $coord = $2;
 
@@ -427,6 +435,7 @@ for my $key (keys %snp2gvf_variant)
 
 	print GVF "$chrom\tvariant\_analyzer\tSNV\t$coord\t$coord\t\.\t\+\t\.\t";
 	print GVF "ID\=snp\_$snp_id\;Variant\_seq=$tar\;Reference\_seq\=$ref\;";
+	print GVF "Variant\_type\=$snp_type[1];";  # 2011-11-21 | CF | additional tag for easy track grouping in GBrowse
 	print GVF "Variant\_effect\=$snp_type[1]";
 
 	if($snp_type[1] ne 'silent_mutation')
@@ -434,29 +443,33 @@ for my $key (keys %snp2gvf_variant)
 		chop($snp2gvf_variant{$key});	#removes comma
 		print GVF " 0 mRNA $snp2gvf_variant{$key}\;";
 
-                my @trans = split(/\,/,$snp2gvf_variant{$key});
-                for(my $i=0;$i<@trans;$i++)
-                { 
-                        $transcript2snp_id{$trans[$i]}.="snp\_$snp_id\($snp_type[1]\),";
-               	}
+        my @trans = split(/\,/,$snp2gvf_variant{$key});
+        for(my $i=0;$i<@trans;$i++)
+        { 
+        	$transcript2snp_id{$trans[$i]}.="snp\_$snp_id\($snp_type[1]\),";
+        }
 	}
 
 	if(defined $snp2gvf_note{$key})
 	{
 		chop($snp2gvf_note{$key});	#removes comma
 		print GVF "Note\=$snp2gvf_note{$key}\n";
+		$gvfs ++;
 	}
 	else
 	{
 		print GVF "\n";
+		$gvfs ++;
 	}
 	$snp_id++;
 }
 close(GVF);
 
+print "[categorize-SNPs.pl] $gvfs GVs written to $out_dir/VA_categorized_GVs.gvf\n";
+
 #now we annotate the SNPs IDs in the gff3 file for transcripts
 
-open(TMP_GFF3,">transcripts_snps_applied.gff3.tmp");
+open(TMP_GFF3,">$out_dir/VA_Intermediate_Files/transcripts_snps_applied.gff3.tmp") || die "[categorize-SNPs.pl] $!: $out_dir/VA_Intermediate_Files/transcripts_snps_applied.gff3.tmp\n";
 while(<I>)
 {
 	chomp($_);
@@ -474,3 +487,6 @@ while(<I>)
 }
 close(I);
 #system("rm transcripts.gff3.tmp")
+
+print "[categorize-SNPs.pl] Done at ";
+system(date);

@@ -2,12 +2,16 @@
 
 use strict;
 
+print "[apply_SNPs.pl] Start executing script on ";
+system(date);
+
 my $reference_pfa = $ARGV[0];
 my $snp_list = $ARGV[1];
+my $out_dir = $ARGV[2] or die "[apply_SNPs.pl] output directory not specified\n";
 
-open(D,$reference_pfa) || die "$!\n";
+open(D,$reference_pfa) || die "[apply_SNPs.pl] $!: $reference_pfa\n";
 
-open(E,$snp_list) || die "$!\n";
+open(E,$snp_list) || die "[apply_SNPs.pl] $!: $snp_list\n";
 
 my %snps = ();
 
@@ -41,7 +45,6 @@ while(<D>)
 }
 close(D);
 
-
 while(<E>)
 {
         chomp($_);
@@ -53,48 +56,46 @@ while(<E>)
 }
 close(E);
 
-open(SNP_PFA,">target_cDNA_SNPs.exons");
-open(SNP_FA,">target_cDNA_SNPs.fasta");
+open(SNP_PFA,">$out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons\n");
+open(SNP_FA,">$out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta\n");
 
+my ($snp_pfa_lines, $snp_fa_lines) = (0, 0);
+my $c;
 for my $key (keys %trans_exons)
 {
-	print SNP_PFA "\>$key\t$trans_chrom{$key}\t$trans_start{$key}\t$trans_end{$key}\t$trans_strand{$key}\n";
-	print SNP_FA "\>$key\t$trans_chrom{$key}\t$trans_start{$key}\t$trans_end{$key}\t$trans_strand{$key}\n";
+	my $chrom = $trans_chrom{$key};
+	my $strand = $trans_strand{$key};
+	
+	print SNP_PFA "\>$key\t$chrom\t$trans_start{$key}\t$trans_end{$key}\t$strand\n";
+	print SNP_FA "\>$key\t$chrom\t$trans_start{$key}\t$trans_end{$key}\t$strand\n";
 
 	my @exons = split(/\n/,$trans_exons{$key});
 	for(my $j=0;$j<@exons;$j++)
-        {
-        	my ($exon_prefix,$exon_start,$exon_end, $exon_seq);
-        	$exons[$j]=~/^(\((\d+)\-(\d+)\))\s+(\S+)/;
-                $exon_prefix=$1;
-                $exon_start = $2;
-                $exon_end = $3;
-                $exon_seq = $4;
-
+    {
+      	my ($exon_prefix,$exon_start,$exon_end, $exon_seq) = $exons[$j] =~ /^(\((\d+)\-(\d+)\))\s+(\S+)/;
 		print SNP_PFA "$exon_prefix ";
 
 		my $abs_coord=$exon_start;
-		my @nts= split(//,$exon_seq);
-
-		for (my $i=0;$i<@nts;$i++)
+		for (my $i=0;$i<length($exon_seq);$i++)
 		{
-			my $coord = "$trans_chrom{$key}\:$abs_coord";
+			my $coord = "$chrom\:$abs_coord";
 			if(defined $snps{$coord})
 			{
 				my $snp_seq = $snps{$coord};
-				if($trans_strand{$key} eq '-')
+				if($strand eq '-')
 				{
 					$snp_seq =~tr/[ACTG]/[TGAC]/;
 				}
-                                print SNP_PFA $snp_seq;
-                                print SNP_FA $snp_seq;
+                print SNP_PFA $snp_seq;
+                print SNP_FA $snp_seq;
 			}
 			else
 			{
-				print SNP_PFA $nts[$i];
-				print SNP_FA $nts[$i];
+				$c = substr($exon_seq, $i, 1);
+				print SNP_PFA $c;
+				print SNP_FA $c;
 			}
-			if($trans_strand{$key} eq '-')
+			if($strand eq '-')
 			{
 				$abs_coord--;
 			}
@@ -104,8 +105,16 @@ for my $key (keys %trans_exons)
 			}
 		}
 		print SNP_PFA "\n";
+		$snp_pfa_lines ++;
 	}
 	print SNP_FA "\n";
+	$snp_fa_lines ++;
 }
 close(SNP_PFA);
 close(SNP_FA);
+
+print "[apply_SNPs.pl] $snp_pfa_lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons\n";
+print "[apply_SNPs.pl] $snp_fa_lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta\n";
+
+print "[apply_SNPs.pl] Done at ";
+system(date);

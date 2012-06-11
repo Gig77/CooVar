@@ -6,6 +6,8 @@ use Bio::SeqUtils;
 use Bio::SeqIO;
 use POSIX qw(ceil floor);
 
+print "[apply-insertions-deletions.pl] Start executing script on ";
+system(date);
 
 sub evaluate_cDNA
 {
@@ -145,14 +147,15 @@ my $insertion_list = $ARGV[3];
 my $deletion_list = $ARGV[4];
 my $gvf_gvs = $ARGV[5];
 my $trans_gff3 = $ARGV[6];
+my $out_dir = $ARGV[7] or die "[apply-insertions-deletions.pl] output directory not specified\n";
 
-open(cDNA_ref,$ref_pseudo_fasta) || die "$!\n";
-open(cDNA_SNP,$pseudo_fasta) || die "$!\n";
-open(SNP,$categorized_snps) || die "$!\n";
-open(INS,$insertion_list) || die "$!\n";
-open(DEL,$deletion_list) || die "$!\n";
-open(GVF,">>$gvf_gvs") || die "$!\n";
-open(TRANS_GFF3,$trans_gff3) || die "$!\n";
+open(cDNA_ref,$ref_pseudo_fasta) || die "[apply-insertions-deletions.pl] $!: $ref_pseudo_fasta\n";
+open(cDNA_SNP,$pseudo_fasta) || die "[apply-insertions-deletions.pl] $!: $pseudo_fasta\n";
+open(SNP,$categorized_snps) || die "[apply-insertions-deletions.pl] $!: $categorized_snps\n";
+open(INS,$insertion_list) || die "[apply-insertions-deletions.pl] $!: $insertion_list\n";
+open(DEL,$deletion_list) || die "[apply-insertions-deletions.pl] $!: $deletion_list\n";
+open(GVF,">>$gvf_gvs") || die "[apply-insertions-deletions.pl] $!: $gvf_gvs\n";
+open(TRANS_GFF3,$trans_gff3) || die "[apply-insertions-deletions.pl] $!: $trans_gff3\n";
 
 my %ref_exons=();
 my $ref_id;
@@ -295,14 +298,14 @@ while(<DEL>)
 }
 close(DEL);
 
-open(MOD_PFA,">variant_cDNA.exons");
-open(MOD_cDNA,">variant_cDNA.fasta");
-open(GENE_SUMMARY,">variant.summary");
-open(STAT,">variant.stat");
-open(MOD_PEP,">variant_peptides.fasta");
-open(ALIGNMENT,">reference_variant.alignment");
-open(DIST_INS,">distribution_insertions.out");
-open(DIST_DEL,">distribution_deletions.out");
+open(MOD_PFA,">$out_dir/VA_Transcripts/variant_cDNA.exons") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant_cDNA.exons\n";;
+open(MOD_cDNA,">$out_dir/VA_Transcripts/variant_cDNA.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant_cDNA.fasta\n";
+open(MOD_PEP,">$out_dir/VA_Transcripts/variant_peptides.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant_peptides.fasta\n";
+open(GENE_SUMMARY,">$out_dir/VA_Intermediate_Files/variant.summary") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Intermediate_Files/variant.summary\n";
+open(STAT,">$out_dir/VA_Transcripts/variant.stat") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant.stat\n";
+open(ALIGNMENT,">$out_dir/VA_Transcripts/reference_variant.alignment") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/reference_variant.alignment\n";
+open(DIST_INS,">$out_dir/VA_Insertions/distribution_insertions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Insertions/distribution_insertions.out\n";
+open(DIST_DEL,">$out_dir/VA_Deletions/distribution_deletions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Deletions/distribution_deletions.out\n";
 
 my %count_orf_status=();
 my @dist_disrupted;
@@ -320,6 +323,7 @@ my %seen_ins=();
 my %seen_del=();
 my %transcript2fate=();
 
+my ($gvfs, $mod_pfas, $mod_cdnas, $summaries, $mod_peps, $alignments) = (0, 0, 0, 0, 0, 0);
 for my $key (keys %chrom_trans)
 {
 	my @transcripts = split(/\s+/,$chrom_trans{$key});
@@ -336,6 +340,7 @@ for my $key (keys %chrom_trans)
 	{
 		$all_transcripts{$transcripts[$i]}++;
 		print ALIGNMENT "\>$transcripts[$i]\t$key\t$trans_start{$transcripts[$i]}\t$trans_end{$transcripts[$i]}\t$trans_strand{$transcripts[$i]}\n";
+		$alignments ++;
 		#print STDERR "Checking transcript $transcripts[$i]\t";
 		#returns insertion coordinates that overlap with this transcript's exon(s)
 		my $overlap_ins = get_overlap_ins($trans_exons{$transcripts[$i]},$trans_start{$transcripts[$i]},$trans_end{$transcripts[$i]},\@insertions);
@@ -345,9 +350,11 @@ for my $key (keys %chrom_trans)
 
 		print MOD_PFA "\>$transcripts[$i]\t$trans_chrom{$transcripts[$i]}\t$trans_start{$transcripts[$i]}\t";
 		print MOD_PFA "$trans_end{$transcripts[$i]}\t$trans_strand{$transcripts[$i]}\n";
+		$mod_pfas ++;
 
-                print MOD_cDNA "\>$transcripts[$i]\t$trans_chrom{$transcripts[$i]}\t$trans_start{$transcripts[$i]}\t";
-                print MOD_cDNA "$trans_end{$transcripts[$i]}\t$trans_strand{$transcripts[$i]}\n";
+        print MOD_cDNA "\>$transcripts[$i]\t$trans_chrom{$transcripts[$i]}\t$trans_start{$transcripts[$i]}\t";
+        print MOD_cDNA "$trans_end{$transcripts[$i]}\t$trans_strand{$transcripts[$i]}\n";
+        $mod_cdnas ++;
 
 		print GENE_SUMMARY "$transcripts[$i]\t$trans2snp{$transcripts[$i]}\t";
 
@@ -576,6 +583,7 @@ for my $key (keys %chrom_trans)
 			for(my $k=0;$k<@ref_segments;$k++)
 			{
 				print ALIGNMENT "$ref_segments[$k]\n$tar_segments[$k]\n\n";
+				$alignments ++;
 			}
 		}
 
@@ -583,13 +591,16 @@ for my $key (keys %chrom_trans)
         	@exons = reverse(@exons);
         	for(my $j=0;$j<@exons;$j++)
         	{
-                	print MOD_PFA $exons[$j],"\n";
-                	$exons[$j]=~/^\S+\s+(\S*)/;
-			my $aux_seq = $1;
-                	print MOD_cDNA $aux_seq;
+            	print MOD_PFA $exons[$j],"\n";
+            	$mod_pfas ++;
+                $exons[$j]=~/^\S+\s+(\S*)/;
+				my $aux_seq = $1;
+                print MOD_cDNA $aux_seq;
 			$modified_cDNA.=$aux_seq;
         	}
         	print MOD_cDNA "\n";
+        	$mod_cdnas ++;
+        	
 
 		$len_after = length($modified_cDNA);
 
@@ -620,8 +631,10 @@ for my $key (keys %chrom_trans)
 		$count_orf_status{$mod_pep_status}++;
 
 		print GENE_SUMMARY "\n";
-                print MOD_PEP "\>$transcripts[$i]\n";
-                print MOD_PEP $mod_pep_seq,"\n";
+		$summaries ++;
+        print MOD_PEP "\>$transcripts[$i]\n";
+        print MOD_PEP $mod_pep_seq,"\n";
+        $mod_peps ++;
 		#print peptide sequence in modified fasta file for proteins
 		#PRINT status in gene summary
 
@@ -667,9 +680,10 @@ for my $key (keys %chrom_trans)
 			$seq_ins = $2;
 		}
 		print GVF "$key\tvariant_analyzer\tinsertion\t$start_ins\t$end_ins\t\.\t\+\t\.\t";
-		print GVF "ID\=ins\_$ins_id\;Variant\_seq\=$seq_ins\;Reference\_seq\=\~\;Variant\_effect\=$variant";
+		print GVF "ID\=ins\_$ins_id\;Variant\_seq\=$seq_ins\;Reference\_seq\=\~\;Variant\_type\=$variant;Variant\_effect\=$variant"; # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
 		chop($ins2gvf_variant{$key2});
 		print GVF " 0 mRNA $ins2gvf_variant{$key2}\n";
+		$gvfs ++;
 
 		my @trans = split(/\,/,$ins2gvf_variant{$key2});
 		for(my $j=0;$j<@trans;$j++)
@@ -691,8 +705,9 @@ for my $key (keys %chrom_trans)
 		my $seq_ins = $3;
 
 		print GVF "$key\tvariant_analyzer\tinsertion\t$start_ins\t$end_ins\t\.\t\+\t\.\t";
-		print GVF "ID\=ins\_$ins_id\;Variant\_seq\=$seq_ins\;Reference\_seq\=\~\;Variant\_effect\=silent\_mutation\n";
+		print GVF "ID\=ins\_$ins_id\;Variant\_seq\=$seq_ins\;Reference\_seq\=\~\;Variant\_type\=silent\_mutation;Variant\_effect\=silent\_mutation\n"; # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
 		$ins_id++;
+		$gvfs ++;
 
 	}
 
@@ -704,9 +719,10 @@ for my $key (keys %chrom_trans)
                 my $variant = $3;
 
                 print GVF "$key\tvariant_analyzer\tdeletion\t$start_del\t$end_del\t\.\t\+\t\.\t";
-                print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_effect\=$variant";
+                print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_type\=$variant;Variant\_effect\=$variant";  # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
                 chop($del2gvf_variant{$key2});
                 print GVF " 0 mRNA $del2gvf_variant{$key2}\n";
+				$gvfs ++;
                 my @trans = split(/\,/,$del2gvf_variant{$key2});
                 for(my $j=0;$j<@trans;$j++)
                 {
@@ -725,8 +741,9 @@ for my $key (keys %chrom_trans)
                 my $end_del = $2;
 
                 print GVF "$key\tvariant_analyzer\tdeletion\t$start_del\t$end_del\t\.\t\+\t\.\t";
-                print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_effect\=silent\_mutation\n";
+                print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_type\=silent\_mutation;Variant\_effect\=silent\_mutation\n"; # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
                 $del_id++;
+				$gvfs ++;
         }
 }
 close(MOD_cDNA);
@@ -734,8 +751,16 @@ close(MOD_PFA);
 close(MOD_PEP);
 close(GENE_SUMMARY);
 close(GVF);
+close(ALIGNMENT);
 
-open(FINAL_GFF3,">VA_transcripts.gff3");
+print "[apply-insertions-deletions.pl] $gvfs lines added to $gvf_gvs\n";
+print "[apply-insertions-deletions.pl] $mod_pfas lines written to $out_dir/VA_Transcripts/variant_cDNA.exons\n";
+print "[apply-insertions-deletions.pl] $mod_cdnas lines written to $out_dir/VA_Transcripts/variant_cDNA.fasta\n";
+print "[apply-insertions-deletions.pl] $mod_peps lines written to $out_dir/VA_Transcripts/variant_peptides.fasta\n";
+print "[apply-insertions-deletions.pl] $summaries lines written to $out_dir/VA_Intermediate_Files/variant.summary\n";
+print "[apply-insertions-deletions.pl] $alignments lines written to $out_dir/VA_Transcripts/reference_variant.alignment\n";
+
+open(FINAL_GFF3,">$out_dir/VA_transcripts.gff3") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_transcripts.gff3\n";
 
 while(<TRANS_GFF3>)
 {
@@ -805,8 +830,7 @@ for my $key (sort keys %count_overall_impact)
 }
 
 close(STAT);
-
-
+print "[apply-insertions-deletions.pl] Variant statistics written to $out_dir/VA_Transcripts/variant.stat\n";
 
 print DIST_INS "Length Distribution of All Insertions\n";
 print DIST_INS "-------------------------------------\n";
@@ -850,3 +874,10 @@ for (my $i=0;$i<@dist_del_exons;$i++)
 
 close(DIST_INS);
 close(DIST_DEL);
+
+print "[apply-insertions-deletions.pl] Insertion distribution written to $out_dir/VA_Insertions/distribution_insertions.out\n";
+print "[apply-insertions-deletions.pl] Deletion distribution written to $out_dir/VA_Deletions/distribution_deletions.out\n";
+
+
+print "[apply-insertions-deletions.pl] Done at ";
+system(date);

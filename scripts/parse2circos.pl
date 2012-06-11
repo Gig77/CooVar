@@ -1,70 +1,54 @@
 #!/usr/bin/perl
 
-use strict vars;
-use strict subs;
+use strict;
+
 use Bio::SeqIO;
 use POSIX qw(ceil floor);
+use File::Basename;
+use List::Util qw[min max];
+
+print "[parse2circos.pl] Start executing script on ";
+system(date);
 
 sub print_circos
 {
 	my $coord_gv_ref = shift;
 	my $chrom_ref = shift;
-	my $window_pace = shift;
-	my $label = shift;
+	my $bin_size = shift or die "[parse2circos.pl] print_circos(): bin_size not specified\n";
+	my $file = shift or die "[parse2circos.pl] print_circos(): filename not specified\n";
 
 	my %gvs=%$coord_gv_ref;
 	my %chroms = %$chrom_ref;
 
-	for my $key  (sort keys %chroms)
+	open(CIRCOS,">$file") || die "[parse2circos.pl] $!: $file\n";
+
+	my $line = 0;
+	for my $key (sort keys %chroms)
 	{
-
-		my $window_count=0;
-        	my $start = 1;
-        	for (my $i=1;$i<=$chroms{$key};$i++)
-        	{   
-                	my $cand="$key\:$i";
-
-	                if(defined $gvs{$cand})
-        	        {          
-				$window_count+=$gvs{$cand};
-                	}        
-
-	                if($i%$window_pace == 0)
-        	        {
-                	        my $end=$start+$window_pace-1;
-                	        if($end>$chroms{$key})
-                        	{
-                                	$end=$chroms{$key};
-                        	}
-
-	                        if($window_count > 0)
-        	                {
-                	                print {$label} "$key\t$start\t$end\t$window_count\n";
-                        	}
-                        	$window_count=0;  
-                        	$start+=$window_pace;   
-                	}
+       	for (my $bin = 0; $bin <= int($chroms{$key}/$bin_size); $bin++)
+        {   
+        	my $cand = "$key\:$bin";
+            if(defined $gvs{$cand})
+        	{          
+	        	my $start = $bin*$bin_size+1;
+    	    	my $end = ($bin+1)*$bin_size;
+    	    	$end = $chroms{$key} if ($end > $chroms{$key});
+				my $count = $gvs{$cand};
+				print CIRCOS "$key\t$start\t$end\t$count\n";
+				$line ++;
         	}
-        	my $end=$start+$window_pace-1;
-        	if($end>$chroms{$key})
-        	{
-                	$end=$chroms{$key};
-        	}
-
-	        if($window_count > 0)
-        	{
-                	print {$label} "$key\t$start\t$end\t$window_count\n";
-        	}
-        	$start+=$window_pace;
+        }
 	}
-	return;
+	close(CIRCOS);
+	
+	print "[parse2circos.pl] $line lines written to $file\n";
 }
 
-
-open(SNP,$ARGV[0]) || die "$!\n";	#list of filtered SNPs
-open(INS,$ARGV[1]) || die "$!\n";	#list of filtered insertions
-open(DEL,$ARGV[2]) || die "$!\n";	#list of filtered deletions
-open(EXON,$ARGV[3]) || die "$!\n";	#list of exons
+open(SNP,$ARGV[0]) || die "[parse2circos.pl] $!: $ARGV[0]\n";	#list of filtered SNPs
+open(INS,$ARGV[1]) || die "[parse2circos.pl] $!: $ARGV[1]\n";	#list of filtered insertions
+open(DEL,$ARGV[2]) || die "[parse2circos.pl] $!: $ARGV[2]\n";	#list of filtered deletions
+open(EXON,$ARGV[3]) || die "[parse2circos.pl] $!: $ARGV[3]\n";	#list of exons
+my $out_dir = $ARGV[5] or die "[parse2circos.pl] output directory not specified\n";
 
 my $ref=Bio::SeqIO->new('-format'=>'Fasta','-file'=>$ARGV[4]);	#fasta sequence of genome
 
@@ -73,40 +57,31 @@ my %chrom_size=();
 
 while (my $seq_obj=$ref->next_seq)
 {
-        $genome_length+=$seq_obj->length();
+	$genome_length+=$seq_obj->length();
 	$chrom_size{$seq_obj->id()}=$seq_obj->length();
 }
-my $window_size = ceil(0.001*$genome_length);
+my $bin_size = ceil(0.001*$genome_length);
 
 my $snp_circos = $ARGV[0]  . '.circos';
 my $ins_circos = $ARGV[1]  . '.circos';
 my $del_circos = $ARGV[2]  . '.circos';
 my $exon_circos= $ARGV[3]  . '.circos';
-
-open(CIRCOS_SNP,">$snp_circos");
-open(CIRCOS_INS,">$ins_circos");       
-open(CIRCOS_DEL,">$del_circos");         
-open(CIRCOS_EX,">$exon_circos");
+$exon_circos = "$out_dir/VA_Transcripts/".basename($exon_circos);
 
 my %snp=();
-
 while(<SNP>)
 {
 	chomp($_);
 	my @line=split(/\t/,$_);
 	my $chrom=$line[0];
 	my $start=$line[1];
-	my $cand="$chrom\:$start";
-	$snp{$cand}=1;
+	my $bin=int($start/$bin_size);
+	my $cand="$chrom\:$bin";
+	$snp{$cand}++;
 }  
 close(SNP);
 
-print_circos(\%snp,\%chrom_size,$window_size,"CIRCOS_SNP");
-
-for my $key (keys %snp)
-{
-	delete($snp{$key});
-}
+print_circos(\%snp,\%chrom_size,$bin_size,$snp_circos);
 
 my %ins=();
 my %dels=();
@@ -118,71 +93,77 @@ while(<INS>)
 	my $chrom=$line[0];
 	my $start=$line[1];
 	my $end=$line[2];
-	my $len_ins = length($line[3]);
-	$ins{"$chrom\:$start"}+=$len_ins;
+	my $start_bin=int($start/$bin_size);
+	my $end_bin=int($end/$bin_size);
+	my $len_ins=length($line[3]);
+		
+	$ins{"$chrom\:$start_bin"}+=$len_ins;
+
 	#insertion assoc with deletion
 	if($end - $start > 1)
 	{
-	        for (my $i=$start+1;$i<=$end-1;$i++)        
-        	{        
-                	$dels{"$chrom\:$i"}=1;     
-        	}
+		for(my $bin = $start_bin; $bin <= $end_bin; $bin++)
+		{
+			my $bin_start = $bin*$bin_size+1;
+			my $bin_end = ($bin+1)*$bin_size;
+			my $overlap = min($bin_end,$end-1)-max($bin_start,$start+1)+1;
+			$dels{"$chrom\:$bin"} += $overlap;
+		}
 	}
 }
 close(INS);
 
-print_circos(\%ins,\%chrom_size,$window_size,"CIRCOS_INS");
-
-for my $key (keys %ins) 
-{ 
-        delete($ins{$key});
-}
+print_circos(\%ins,\%chrom_size,$bin_size,$ins_circos);
 
 while(<DEL>)
 {
 	chomp($_);
 	my @line=split(/\t/,$_);
-        my $chrom=$line[0];
-        my $start=$line[1];
-        my $end=$line[2];
-        for (my $i=$start;$i<=$end;$i++)
-        {
-		$dels{"$chrom\:$i"}=1;
-        }
+    my $chrom=$line[0];
+    my $start=$line[1];
+    my $end=$line[2];
+	my $start_bin=int($start/$bin_size);
+	my $end_bin=int($end/$bin_size);
+
+	for(my $bin = $start_bin; $bin <= $end_bin; $bin++)
+	{
+		my $bin_start = $bin*$bin_size+1;
+		my $bin_end = ($bin+1)*$bin_size;
+		my $overlap = min($bin_end,$end)-max($bin_start,$start)+1;
+		$dels{"$chrom\:$bin"} += $overlap;
+	}
 }
 close(DEL);
 
-print_circos(\%dels,\%chrom_size,$window_size,"CIRCOS_DEL");
-
-for my $key (keys %dels)
-{ 
-        delete($dels{$key});
-}
+print_circos(\%dels,\%chrom_size,$bin_size,$del_circos);
 
 my %exons=();
 while(<EXON>)      
 {        
-        chomp($_);   
+    chomp($_);   
 	next if ($_=~/^\#/);     
-        my @line=split(/\t/,$_);        
-        my $chrom=$line[0];        
-        my $start=$line[3];        
-        my $end=$line[4];        
-        for (my $i=$start;$i<=$end;$i++)        
-        {        
-                $exons{"$chrom\:$i"}=1;    
-        }
+    my @line=split(/\t/,$_);        
+    my $chrom=$line[0];        
+    my $start=$line[3];        
+    my $end=$line[4];        
+	my $start_bin=int($start/$bin_size);
+	my $end_bin=int($end/$bin_size);
+
+	for(my $bin = $start_bin; $bin <= $end_bin; $bin++)
+	{
+		my $bin_start = $bin*$bin_size+1;
+		my $bin_end = ($bin+1)*$bin_size;
+		my $overlap = min($bin_end,$end)-max($bin_start,$start)+1;
+		$exons{"$chrom\:$bin"} += $overlap;
+#		if ($chrom eq "I" and ($bin == 0 or $bin == 1))
+#		{
+#			print "$chrom\t$start\t$end\t$bin_start\t$bin_end\t$bin\t$overlap\n";
+#		}
+	}
 }
 close(EXON);
 
-print_circos(\%exons,\%chrom_size,$window_size,"CIRCOS_EX"); 
+print_circos(\%exons,\%chrom_size,$bin_size,$exon_circos); 
 
-for my $key (keys %exons)
-{            
-        delete($exons{$key});
-}    
-
-close(CIRCOS_SNP);
-close(CIRCOS_INS);
-close(CIRCOS_DEL);
-close(CIRCOS_EX);
+print "[parse2circos.pl] Done at ";
+system(date);
