@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 
 print "[VCF2VA.pl] Start executing script on ";
-system(date);
+system("date");
 
 #this script takes as input a VCF file and generates the necessary input files for SNPs, insertions and deletions
 
@@ -94,4 +94,4 @@ print "[VCF2VA.pl] $inss insertions written to $ins_file...\n";
 print "[VCF2VA.pl] $dels deletions written to $del_file...\n";
 
 print "[VCF2VA.pl] Done at ";
-system(date);
+system("date");

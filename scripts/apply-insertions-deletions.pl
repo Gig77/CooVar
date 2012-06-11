@@ -7,7 +7,7 @@ use Bio::SeqIO;
 use POSIX qw(ceil floor);
 
 print "[apply-insertions-deletions.pl] Start executing script on ";
-system(date);
+system("date");
 
 sub evaluate_cDNA
 {
@@ -880,4 +880,4 @@ print "[apply-insertions-deletions.pl] Deletion distribution written to $out_dir
 
 
 print "[apply-insertions-deletions.pl] Done at ";
-system(date);
+system("date");

@@ -58,7 +58,7 @@ $prog_dir = "." if (!$prog_dir);
 print $prog_dir."\n";
 
 print "[variant-analyzer.pl] Start executing script on ";
-system(date);
+system("date");
 
 print "[variant-analyzer.pl] Command line: ".__FILE__." $params\n";
 print "[variant-analyzer.pl]   REFERENCE: $dna_file\n";
@@ -76,7 +76,7 @@ execute("mkdir $out_dir") unless (-d $out_dir);
 execute("mkdir $out_dir/VA_Intermediate_Files") unless (-d "$out_dir/VA_Intermediate_Files");
 
 print "[variant-analyzer.pl] Parsing GV files on ";
-system(date);
+system("date");
 
 if(defined $tab_file)
 {
@@ -99,7 +99,7 @@ execute("mkdir $out_dir/VA_Deletions") unless (-d "$out_dir/VA_Deletions");
 execute("mkdir $out_dir/VA_Transcripts") unless (-d "$out_dir/VA_Transcripts");
 
 print "[variant-analyzer.pl] Checking consistency of GV files on ";
-system(date);
+system("date");
 execute("perl $prog_dir/scripts/revise-GV-files.pl $snp_file $ins_file $del_file $out_dir");
 
 my $ex_snps = "$out_dir/VA_SNPs/excluded_" . basename($snp_file);
@@ -111,31 +111,31 @@ $ins_file = "$out_dir/VA_Insertions/kept_" . basename($ins_file);
 $del_file = "$out_dir/VA_Deletions/kept_" . basename($del_file);
 
 print "[variant-analyzer.pl] Extracting cDNA sequence from reference on ";
-system(date);
+system("date");
 execute("perl $prog_dir/scripts/extract-cDNA.pl $exon_file $dna_file $out_dir");
 
 print "[variant-analyzer.pl] Applying SNPs to cDNA sequences on ";
-system(date);
+system("date");
 execute("perl $prog_dir/scripts/apply-SNPs.pl $out_dir/VA_Transcripts/reference_cDNA.exons $snp_file $out_dir");
 
 print "[variant-analyzer.pl] Categorizing SNPs on ";
-system(date);
+system("date");
 execute("perl $prog_dir/scripts/categorize-SNPs.pl $out_dir/VA_Transcripts/reference_cDNA.exons $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons $prog_dir/lib/grantham_matrix  $snp_file $out_dir/VA_Intermediate_Files/splice_junctions.tmp $out_dir/VA_Intermediate_Files/transcripts.gff3.tmp $out_dir/VA_Intermediate_Files/snps_frequency.table $out_dir");
 
 print "[variant-analyzer.pl] Generating stats for SNP categorization on ";
-system(date);
+system("date");
 execute("perl $prog_dir/scripts/get-stats-SNPs.pl $out_dir/VA_Intermediate_Files/categorized_snp_coords.list $out_dir");
 
 print "[variant-analyzer.pl] Analyzing insertions and deletions on ";
-system(date);
+system("date");
 execute("perl $prog_dir/scripts/apply-insertions-deletions.pl $out_dir/VA_Transcripts/reference_cDNA.exons $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons $out_dir/VA_Intermediate_Files/categorized_snp_coords.list $ins_file $del_file $out_dir/VA_categorized_GVs.gvf $out_dir/VA_Intermediate_Files/transcripts_snps_applied.gff3.tmp $out_dir");
 
 if($circos == 1)
 {
 	print "[variant-analyzer.pl] Generating CIRCOS files for SNPs, insertions, deletions and coding regions on ";
-	system(date);
+	system("date");
 	execute("perl $prog_dir/scripts/parse2circos.pl $snp_file $ins_file $del_file $exon_file $dna_file $out_dir"); 
 }
 
 print "[variant-analyzer.pl] Done at ";
-system(date);
+system("date");

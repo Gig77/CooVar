@@ -6,7 +6,7 @@ use Bio::SeqIO;
 use Bio::DB::Fasta;
 
 print "[extract-cDNA.pl] Start executing script on ";
-system(date);
+system("date");
 
 my $out_dir = $ARGV[2] or die "[extract-cDNA.pl] output directory not specified\n";
 
@@ -253,4 +253,4 @@ print "[extract-cDNA.pl] $exons exons written to $out_dir/VA_Transcripts/referen
 print "[extract-cDNA.pl] $junctions splice junctions written to $out_dir/VA_Intermediate_Files/splice_junctions.tmp\n";
 
 print "[extract-cDNA.pl] Done at ";
-system(date);
+system("date");

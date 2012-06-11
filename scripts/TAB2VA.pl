@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 
 print "[TAB2VA.pl] Start executing script on ";
-system(date);
+system("date");
 
 my $out_dir = $ARGV[1] or die "[TAB2VA.pl] output directory not specified\n";
 
@@ -56,4 +56,4 @@ print "[TAB2VA.pl] $ins insertions written to $ins_file...\n";
 print "[TAB2VA.pl] $del deletions written to $del_file...\n";
 
 print "[TAB2VA.pl] Done at ";
-system(date);
+system("date");

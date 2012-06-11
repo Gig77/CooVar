@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 
 print "[revise-GV-files.pl] Start executing script on ";
-system(date);
+system("date");
 
 my $out_dir = $ARGV[3];
 
@@ -114,4 +114,4 @@ print "[revise-GV-files.pl] $kept kept deletions written to $output_del\n";
 print "[revise-GV-files.pl] $excluded excluded deletions written to $excluded_del\n";
 
 print "[revise-GV-files.pl] Done at ";
-system(date);
+system("date");

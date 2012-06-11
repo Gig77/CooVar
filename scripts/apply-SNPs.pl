@@ -3,7 +3,7 @@
 use strict;
 
 print "[apply_SNPs.pl] Start executing script on ";
-system(date);
+system("date");
 
 my $reference_pfa = $ARGV[0];
 my $snp_list = $ARGV[1];
@@ -117,4 +117,4 @@ print "[apply_SNPs.pl] $snp_pfa_lines written to $out_dir/VA_Intermediate_Files/
 print "[apply_SNPs.pl] $snp_fa_lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta\n";
 
 print "[apply_SNPs.pl] Done at ";
-system(date);
+system("date");

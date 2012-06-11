@@ -3,7 +3,7 @@
 use strict;
 
 print "[categorize-SNPs.pl] Start executing script on ";
-system(date);
+system("date");
 
 my %ref_cdna=();
 my %tar_cdna=();
@@ -489,4 +489,4 @@ close(I);
 #system("rm transcripts.gff3.tmp")
 
 print "[categorize-SNPs.pl] Done at ";
-system(date);
+system("date");
