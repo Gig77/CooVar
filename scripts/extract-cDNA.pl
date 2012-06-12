@@ -123,6 +123,7 @@ my $fasta=$ARGV[1];
 my %exon=();
 my %exon_contig=();
 my %exon_strand=();
+my %exon_gene=();
 
 system("sort -k 4 -n $ARGV[0] > $out_dir/sorted_gff3.tmp") == 0 
   or die ("[extract-cDNA.pl] ERROR executing command: sort -k 4 -n $ARGV[0] > $out_dir/sorted_gff3.tmp\n");
@@ -152,7 +153,7 @@ while(<D>)
 	my $id;
 	for(my $i=0;$i<@data;$i++)
 	{
-		next if ($data[$i]!~/(ID\=|Parent\=|transcript_id\ )(\S+)/);
+		next if ($data[$i]!~/(ID\=|Parent\=|transcript_id\ )([^;\s]+)/);
 		$id = $2;
 		$id=~s/\"//g;
 		last;
@@ -174,11 +175,17 @@ while(<D>)
 	$exon_contig{$id}=$line[0];
 	$exon_strand{$id}=$line[6];
 	
+	# remember exon/gene association (if specified)
+	my ($geneid) = $line[8] =~ /gene=([^;]+)/i;
+	($geneid) = $line[8] =~ /gene_id \"([^\"]+)\"/i if (!$geneid); 
+	$exon_gene{$id}=$geneid;
+	
 	next if (defined $seen{$id});
 	$chrom{$line[0]}.=$id . " ";
 	$seen{$id}++;
 }
 close(D);
+system("rm $out_dir/sorted_gff3.tmp");
 
 open(ORI_CDNA,">$out_dir/VA_Transcripts/reference_cDNA.fasta") || die "[extract-cDNA.pl] $!: $out_dir/VA_Transcripts/reference_cDNA.fasta\n";;
 open(ORI_PEP,">$out_dir/VA_Transcripts/reference_peptides.fasta") || die "[extract-cDNA.pl] $!: $out_dir/VA_Transcripts/reference_peptides.fasta\n";;
@@ -217,7 +224,9 @@ for my $chr (sort keys %chrom)
 		$exons ++;
 
 		print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tvariant_analyzer\tmRNA\t";
-		print GFF3_TRANS "$info[0]\t$info[1]\t\.\t$exon_strand{$transcripts[$i]}\t\.\tID\=$transcripts[$i]\n";
+		print GFF3_TRANS "$info[0]\t$info[1]\t\.\t$exon_strand{$transcripts[$i]}\t\.\tID\=$transcripts[$i]";
+		print GFF3_TRANS ";gene=$exon_gene{$transcripts[$i]}" if (defined $exon_gene{$transcripts[$i]});
+		print GFF3_TRANS "\n";
 		
 		for(my $j=0;$j<@line;$j++)
 		{

@@ -113,8 +113,8 @@ for my $key (keys %trans_exons)
 close(SNP_PFA);
 close(SNP_FA);
 
-print "[apply_SNPs.pl] $snp_pfa_lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons\n";
-print "[apply_SNPs.pl] $snp_fa_lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta\n";
+print "[apply_SNPs.pl] $snp_pfa_lines lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons\n";
+print "[apply_SNPs.pl] $snp_fa_lines lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta\n";
 
 print "[apply_SNPs.pl] Done at ";
 system("date");

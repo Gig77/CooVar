@@ -767,15 +767,16 @@ while(<TRANS_GFF3>)
         chomp($_);
         if($_=~/^\#/ || $_=~/\tvariant\_analyzer\tcoding\_exon\t/)
         {
-                print FINAL_GFF3 $_,"\n";
-                next;
+        	print FINAL_GFF3 $_,"\n";
+            next;
         }
         else
         {
-		my @line = split(/\t/,$_);
-                $line[8]=~/ID\=(\S+)\;Note/;
-                my $trans = $1;
-                print FINAL_GFF3 $_,"$trans2ins_id{$trans}$trans2del_id{$trans}$transcript2fate{$trans}\n";
+			my @line = split(/\t/,$_);
+            $line[8]=~/ID\=([^;\s]+)/;
+            print "[apply-insertions-deletions.pl] ERROR: could not parse ID from following line:\n$_\n" if (!defined $1);
+            my $trans = $1;
+            print FINAL_GFF3 $_,"$trans2ins_id{$trans}$trans2del_id{$trans}$transcript2fate{$trans}\n";
         }
 }
 close(TRANS_GFF3);

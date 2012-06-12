@@ -189,7 +189,6 @@ print GVF "\#\#gff-version 3\n";
 print GVF "\#\#gvf-version 1\.05\n";
 
 my %seen_snps=();
-my $snp_id = 0;
 
 my %snp2gvf_variant=();
 my %snp2gvf_note=();
@@ -480,7 +479,8 @@ while(<I>)
 	}
 	else
 	{
-		$_=~/\tID\=(\S+)$/;
+		$_=~/\tID\=([^;\s]+)/;
+        print "[categorize-SNPs.pl] ERROR: could not parse ID from following line:\n$_\n" if (!defined $1);
 		my $trans = $1;
 		print TMP_GFF3 $_,"\;Note\=$transcript2snp_id{$trans}\n";
 	}

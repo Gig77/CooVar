@@ -103,13 +103,13 @@ should exclude UTRs.
 
 Example1: transcript 2L52.1 in C. elegans in gff3 format:
 
-II      Coding_transcript       CDS     1867    1911    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
-II      Coding_transcript       CDS     2506    2694    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
-II      Coding_transcript       CDS     2738    2888    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
-II      Coding_transcript       CDS     2931    3036    .       +       2       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
-II      Coding_transcript       CDS     3406    3552    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
-II      Coding_transcript       CDS     3802    3984    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
-II      Coding_transcript       CDS     4201    4663    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2 
+II      Coding_transcript       CDS     1867    1911    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2;gene=2L52.1 
+II      Coding_transcript       CDS     2506    2694    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2;gene=2L52.1 
+II      Coding_transcript       CDS     2738    2888    .       +       0       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2;gene=2L52.1
+II      Coding_transcript       CDS     2931    3036    .       +       2       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2;gene=2L52.1 
+II      Coding_transcript       CDS     3406    3552    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2;gene=2L52.1
+II      Coding_transcript       CDS     3802    3984    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2;gene=2L52.1 
+II      Coding_transcript       CDS     4201    4663    .       +       1       ID=CDS:2L52.1;Note=Zinc finger%2C C2H2;gene=2L52.1
  
 Example2: transcript ENST00000371026 in Human, in gtf format:
 
@@ -131,7 +131,9 @@ chr1    hg18_ensGene    CDS     67131500        67131684        0.000000        
 chr1    hg18_ensGene    CDS     67143472        67143646        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 chr1    hg18_ensGene    CDS     67162933        67163102        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 
-Note that there are no extra lines regarding gene/5_prime_UTR/3_prime_UTR/etc and different exons belonging to the same transcript have the same ID.
+Note that there are no extra lines regarding gene/5_prime_UTR/3_prime_UTR/etc and different exons belonging to the same transcript have the same ID. If
+the gene attribute is specified ('gene=' in gff3 or 'gene_id' in gtf) then this gene ID is carried over to the VA_transcripts.gff3
+output file, which is useful if one wants to know the identity of genes effected by GVs in addition to transcripts IDs.  
 
 As you can see, the relevant columns are 
 
