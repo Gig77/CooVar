@@ -131,8 +131,10 @@ chr1    hg18_ensGene    CDS     67131500        67131684        0.000000        
 chr1    hg18_ensGene    CDS     67143472        67143646        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 chr1    hg18_ensGene    CDS     67162933        67163102        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 
-Note that there are no extra lines regarding gene/5_prime_UTR/3_prime_UTR/etc and different exons belonging to the same transcript have the same ID. If
-the gene attribute is specified ('gene=' in gff3 or 'gene_id' in gtf) then this gene ID is carried over to the VA_transcripts.gff3
+IMPORTANT: Note that there are NO EXTRA LINES regarding gene/5_prime_UTR/3_prime_UTR/etc in the GFF/GTF input file, and different 
+           exons belonging to the same transcript have the same ID.
+
+If the gene attribute is specified ('gene=' in gff3 or 'gene_id' in gtf) then this gene ID is carried over to the VA_transcripts.gff3
 output file, which is useful if one wants to know the identity of genes effected by GVs in addition to transcripts IDs.  
 
 As you can see, the relevant columns are 
@@ -234,7 +236,6 @@ The output of Variant-Analyzer is structured as follows:
 .
 |-- VA_transcripts.gff3: transcripts, GVs impacting them, status of the ORF. See description in section 6.1 below
 |-- VA_categorized_GVs.gvf: each GV and its impact (or not, if silent) on all transcripts. See description in section 6.1 below
-|-- VA_README
 |-- VA_Deletions
 |   |-- distribution_deletions.out: length distribution of all deletions and of those deletions impacting exons.
 |   |-- excluded_GVs.VA_DEL: deletions excluded from the input for not accomplishing the specified format.
@@ -253,15 +254,15 @@ The output of Variant-Analyzer is structured as follows:
 |   |-- kept_GVs.list.VA_SNP: SNPs kept from the input. The ones to be applied to the transcripts. 
 |   `-- kept_GVs.list.VA_SNP.circos: Circos frequency file for deletions. Designed for heatmap visualization.
 |-- VA_Transcripts
-|   |-- exons_nuclear_DNA.gff3.circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
 |   |-- reference_cDNA.exons: reference cDNA shown per exon, per transcript.
-|   |-- reference_cDNA.fasta: reference cDNA for each transcript.
-|   |-- reference_peptides.fasta: reference peptide for each transcript.
-|   |-- reference_variant.alignment: alignment of the reference and variant (i.e. all GVs applied) cDNA
-|   |-- variant.stat: distribution of early stop codons along proteins, frequency of different ORF status and summary of impact of GVs on transcripts
 |   |-- variant_cDNA.exons: variant cDNA shown per exon, per transcript.
+|   |-- reference_cDNA.fasta: reference cDNA for each transcript.
 |   |-- variant_cDNA.fasta: variant cDNA for each transcript.
-|   `-- variant_peptides.fasta: variant peptide for each transcript.
+|   |-- reference_peptides.fasta: reference peptide for each transcript.
+|   |-- variant_peptides.fasta: variant peptide for each transcript.
+|   |-- reference_variant.alignment: alignment of the reference and variant (i.e. all GVs applied) cDNA
+|   |-- exons_nuclear_DNA.gff3.circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
+|   `-- variant.stat: distribution of early stop codons along proteins, frequency of different ORF status and summary of impact of GVs on transcripts
 
 (6.1) VA_transcripts.gff3 and VA_categorized_GVs.gvf
  
