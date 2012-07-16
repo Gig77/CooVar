@@ -31,7 +31,6 @@ use Bio::DB::Fasta;
 use Bio::Seq;
 use Bio::SeqUtils;
 use Bio::SeqIO;
-use Bio::Seq;
 
 (1) MOTIVATION
 --------------
