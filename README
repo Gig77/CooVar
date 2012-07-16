@@ -27,7 +27,7 @@ use Getopt::Long;
 use POSIX;
 use File::Basename;
 use List::Util;
-use Bio::Index::Fasta;
+use Bio::DB::Fasta;
 use Bio::Seq;
 use Bio::SeqUtils;
 use Bio::SeqIO;
