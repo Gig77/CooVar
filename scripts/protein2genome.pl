@@ -27,6 +27,8 @@
 #     has been filled in. The original ID entry was extended to include the name of the transcript 
 #     in parentheses and additional attributes have been added, including 'segment' specifying 
 #     the number of the mapped segment and the original protein start and end coordinates. 
+#
+# AUTHOR: Christian Frech
 #------------------------------------------------------------------------------------------------
 
 use strict;

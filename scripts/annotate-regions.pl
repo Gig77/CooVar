@@ -32,6 +32,8 @@
 # which was not present before in the GVF input and specifies with which genomic regions this paritcular GV 
 # (a SNP in this case) overlaps. If multiple regions are found to overlap with a GV
 # they will be separated by a comma. 
+#
+# AUTHOR: Christian Frech
 #------------------------------------------------------------------------------------------------
 
 use strict;
