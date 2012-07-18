@@ -213,6 +213,7 @@ while(<cDNA_SNP>)
 close(cDNA_SNP);
 
 my %trans2snp=();
+my %trans2splice=();
 
 while(<SNP>)
 {
@@ -241,6 +242,7 @@ while(<SNP>)
 		$snp="$ref3\>$tar3";
 	}
 	$trans2snp{$line[1]}.=$line[0] . "\;" .  $snp . " ";
+	$trans2splice{$line[1]}.=$line[0] . "\;" .  $snp . " " if ($line[2] =~ /splice_junction/); # 2012-06-19 | CF |
 }
 close(SNP);
 
@@ -617,6 +619,35 @@ for my $key (keys %chrom_trans)
 			$mod_pep_status = "ORF_INTACT";
 		}
 
+		for(my $j=0;$j<@ins;$j++)
+		{
+			#$to_ins{"$key\:$ins[$j]"}=~/^(\d+)\-(\S+)$/;
+			if($mod_pep_status eq 'ORF_PRESERVED')
+			{
+				$ins2gvf_variant{"$ins[$j]\_\_inframe\_variant"}.=$transcripts[$i] . "\,";
+			}
+			else
+			{
+				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcripts[$i] . "\,";
+			}
+		}
+
+        for(my $j=0;$j<@dels;$j++)
+        {
+       		if($mod_pep_status eq 'ORF_PRESERVED')
+            {
+            	$del2gvf_variant{"$dels[$j]\_\_inframe\_variant"}.=$transcripts[$i] . "\,";
+            }
+            else
+            { 
+            	$del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcripts[$i] . "\,";
+            }
+        }
+
+		# 2012-06-19 | CF | ORFs impacted by splice site variants are considered disrupted
+		$mod_pep_status = 'ORF_DISRUPTED'
+			if ($mod_pep_status eq 'ORF_PRESERVED' and $trans2splice{$transcripts[$i]});
+
 		$transcript2fate{$transcripts[$i]} =  $mod_pep_status;
 
 		print GENE_SUMMARY "$len_before\t$len_after\t$mod_pep_status\t";
@@ -637,33 +668,6 @@ for my $key (keys %chrom_trans)
         $mod_peps ++;
 		#print peptide sequence in modified fasta file for proteins
 		#PRINT status in gene summary
-
-		for(my $j=0;$j<@ins;$j++)
-		{
-			#$to_ins{"$key\:$ins[$j]"}=~/^(\d+)\-(\S+)$/;
-			if($mod_pep_status eq 'ORF_PRESERVED')
-			{
-				$ins2gvf_variant{"$ins[$j]\_\_inframe\_variant"}.=$transcripts[$i] . "\,";
-			}
-			else
-			{
-				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcripts[$i] . "\,";
-			}
-		}
-
-                for(my $j=0;$j<@dels;$j++)
-                {
-                        if($mod_pep_status eq 'ORF_PRESERVED')
-                        {
-                                $del2gvf_variant{"$dels[$j]\_\_inframe\_variant"}.=$transcripts[$i] . "\,";
-                        }
-                        else
-                        { 
-                                $del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcripts[$i] . "\,";
-                       	}
-                }
-
-
 	}
 
 	for my $key2 (keys %ins2gvf_variant)
