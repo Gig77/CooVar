@@ -10,8 +10,16 @@ system("date");
 
 my $out_dir = $ARGV[2] or die "[extract-cDNA.pl] output directory not specified\n";
 
-print "[extract-cDNA.pl] Indexing FASTA file $ARGV[1]\n";
+print "[extract-cDNA.pl] Indexing FASTA file $ARGV[1] on ";
+system("date");
+
 my $db = Bio::DB::Fasta->new($ARGV[1]);
+
+die ("[extract-cDNA.pl] ERROR: Could not index FASTA file. Do you have write permissions to the directory containing the FASTA file?\n")
+	if (!-e "$ARGV[1].index");
+
+print "[extract-cDNA.pl]   Done indexing FASTA file on ";
+system("date");
 
 sub get_pep
 {
@@ -125,6 +133,7 @@ my %exon_contig=();
 my %exon_strand=();
 my %exon_gene=();
 
+print "[extract-cDNA.pl] Sorting input GFF file $ARGV[0] ...\n";
 system("sort -k 4 -n $ARGV[0] > $out_dir/sorted_gff3.tmp") == 0 
   or die ("[extract-cDNA.pl] ERROR executing command: sort -k 4 -n $ARGV[0] > $out_dir/sorted_gff3.tmp\n");
 
@@ -137,6 +146,7 @@ my %chrom=();
 my %seen=();
 
 
+print "[extract-cDNA.pl] Parsing GFF file $out_dir/sorted_gff3.tmp ...\n";
 while(<D>)
 {
 	chomp($_);
@@ -200,9 +210,7 @@ for my $chr (sort keys %chrom)
 	print GFF3_TRANS "\#\#sequence\-region\ $chr\ 1\ ", $db->length($chr) , "\n";
 	my @transcripts = split(/\s+/,$chrom{$chr});
 
-	print "[extract-cDNA.pl] ", scalar(@transcripts) , " transcripts in chromosome $chr\n";
-
-	print "[extract-cDNA.pl] Starting $chr at ";
+	print "[extract-cDNA.pl] Extracting ", scalar(@transcripts) , " transcripts on chromosome $chr on ";
 	system("date");
 
 	for (my $i=0;$i<@transcripts;$i++)
@@ -247,7 +255,7 @@ for my $chr (sort keys %chrom)
 			$junctions ++;
 		}
 	}
-	print "[extract-cDNA.pl] Done with $chr at ";
+	print "[extract-cDNA.pl]   Done with chromosome $chr on ";
 	system("date");
 }
 close(ORI_CDNA);
