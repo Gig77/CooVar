@@ -17,15 +17,12 @@
 #------------------------------------------------------------------------------------------------
 
 use strict;
+use Set::IntSpan;
 
 my %transcript_exons;
 my %transcript_strand;
 my %transcript_contig;
-#my $exons = [ [100,200] , [300,400] , [500,600] ];
-#my $tr = "CDS:AC3.1";
-#my $tr = "CDS:4R79.1a";
 
-#my $exon_file = "/home/cfa24/scripts_data/hawaiian/variants/ALL_VARIANTS/VARIANT_ANALYZER_INPUT/exons_WS210_nuclear_DNA.gff3";
 my $gff_file = $ARGV[0] or die "GFF file with CDS definitions not specified\n";
 load_cds($gff_file);
 
@@ -67,9 +64,18 @@ while (<STDIN>)
 	
 	($nt_start, $nt_end) = ($nt_end, $nt_start) if ($nt_start > $nt_end);
 
-	print "$transcript_contig{$tr}\t$source\t$feature\t$nt_start\t$nt_end\t$score\t$transcript_strand{$tr}\t$frame\tID=$id($tr);";
-	print "$attributes;" if ($attributes);
-	print "p_start=$start;p_end=$end\n";
+	# interval intersection of exons and mapped genomic region
+	my $exon_span = new Set::IntSpan($transcript_exons{$tr});
+	my $region_span = new Set::IntSpan([[$nt_start, $nt_end]]);
+	my @segments = Set::IntSpan::sets($exon_span * $region_span); # intersection
+	for (my $i = 0; $i < @segments; $i ++)
+	{
+		my ($i_start, $i_end) = ($segments[$i]->min, $segments[$i]->max);
+		print "$transcript_contig{$tr}\t$source\t$feature\t$i_start\t$i_end\t$score\t$transcript_strand{$tr}\t$frame\tID=$id($tr);";
+		print "segment=".($i+1)."of".@segments.";";
+		print "$attributes;" if ($attributes);
+		print "p_start=$start;p_end=$end\n";
+	}	
 }
 
 sub load_cds
