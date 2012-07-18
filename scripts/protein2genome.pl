@@ -2,18 +2,31 @@
 
 #------------------------------------------------------------------------------------------------
 # DESCR: map protein coordinates back to genome
-# INPUT: 1) list of transcript IDs and protein coordinates (read from STDIN) 
-#        2) GFF file with transcript CDS definitions  
-# OUTPUT: input lines annotated with genomic coordinates (written to STDOUT)
+# INPUT: 1) GFF3-compliant file with protein coordinates of protein-coding transcripts (read from STDIN) 
+#        2) GFF/GTF compliant file with transcript CDS definitions (same as used for running Variant-Analyzer)  
+# OUTPUT: GFF3-compliant file with protein coordinates mapped to genomic coordinates (written to STDOUT). 
+#         The output of this script can be used as input for the script 'annotate-regions.pl' to identify 
+#         GVs overlapping with protein domains.
 #
 # SYNOPSIS:
 #
-#     $ echo "4R79.1a 10 30 protein domain 1" | perl protein2genome.pl cds.gff
-#     4R79.1a     10      30      IV      17490363        17490425        protein domain 1
+#     $ echo "CDS:AC3.1 Motif_homol pfam 14 318 . . . ID=PFAM:PF10327" | perl protein2genome.pl cds.gff
 #
-#     Each line in the output consists of the first three columns from the input 
-#     line, followed by the mapped chromosome name, genomic start coordinate, 
-#     and genomic end coordinate. All remaining columns are copied from the input line. 
+#   produces the following output
+#
+#     V	Motif_homol	pfam	10368568	10368720	.	+	.	ID=PFAM:PF10327(CDS:AC3.1);segment=1of5;p_start=14;p_end=318
+#     V	Motif_homol	pfam	10368774	10368902	.	+	.	ID=PFAM:PF10327(CDS:AC3.1);segment=2of5;p_start=14;p_end=318
+#     V	Motif_homol	pfam	10368953	10369171	.	+	.	ID=PFAM:PF10327(CDS:AC3.1);segment=3of5;p_start=14;p_end=318
+#     V	Motif_homol	pfam	10369221	10369533	.	+	.	ID=PFAM:PF10327(CDS:AC3.1);segment=4of5;p_start=14;p_end=318
+#     V	Motif_homol	pfam	10369579	10369679	.	+	.	ID=PFAM:PF10327(CDS:AC3.1);segment=5of5;p_start=14;p_end=318
+#
+#     As demonstrated here, one input line can produce multiple output lines if protein
+#     coordinates are split-mapped to multipe genomic segments due to the presence of introns. 
+#     In each output line the first column of the input line has been replaced with the chromosome 
+#     name and protein coordinates have been replaced with genomic coordinates. Also strand information
+#     has been filled in. The original ID entry was extended to include the name of the transcript 
+#     in parentheses and additional attributes have been added, including 'segment' specifying 
+#     the number of the mapped segment and the original protein start and end coordinates. 
 #------------------------------------------------------------------------------------------------
 
 use strict;
@@ -31,7 +44,7 @@ while (<STDIN>)
 {
 	chomp;
 	my $line = $_;
-	my ($tr, $source, $feature, $start, $end, $score, $strand, $frame, $attributes) = split("\t", $line);
+	my ($tr, $source, $feature, $start, $end, $score, $strand, $frame, $attributes) = split(/\s+/, $line);
 	
 	if (!$tr or !$start or !$end or !$attributes)
 	{
