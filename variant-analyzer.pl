@@ -55,11 +55,11 @@ $out_dir = cwd()."/output_".getTimestamp() if (!$out_dir);
 
 my ($prog_dir) = __FILE__ =~ /(.*)\//;
 $prog_dir = "." if (!$prog_dir);
-print $prog_dir."\n";
 
 print "[variant-analyzer.pl] Start executing script on ";
 system("date");
 
+print "[variant-analyzer.pl] Program directory: $prog_dir\n";
 print "[variant-analyzer.pl] Command line: ".__FILE__." $params\n";
 print "[variant-analyzer.pl]   REFERENCE: $dna_file\n";
 print "[variant-analyzer.pl]   GVS_TAB_FORMAT: $tab_file\n";
