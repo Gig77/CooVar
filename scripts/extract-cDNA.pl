@@ -140,7 +140,7 @@ system("sort -k 4 -n $ARGV[0] > $out_dir/sorted_gff3.tmp") == 0
 #gff3 file is sorted according to start 
 open(D,"$out_dir/sorted_gff3.tmp") || die "[extract-cDNA.pl] $!: $out_dir/sorted_gff3.tmp\n";
 
-open(SJ,">$out_dir/VA_Intermediate_Files/splice_junctions.tmp") || die "[extract-cDNA.pl] $!: $out_dir/VA_Intermediate_Files/splice_junctions.tmp\n";
+open(SJ,">$out_dir/CV_Intermediate_Files/splice_junctions.tmp") || die "[extract-cDNA.pl] $!: $out_dir/CV_Intermediate_Files/splice_junctions.tmp\n";
 
 my %chrom=();
 my %seen=();
@@ -197,10 +197,10 @@ while(<D>)
 close(D);
 system("rm $out_dir/sorted_gff3.tmp");
 
-open(ORI_CDNA,">$out_dir/VA_Transcripts/reference_cDNA.fasta") || die "[extract-cDNA.pl] $!: $out_dir/VA_Transcripts/reference_cDNA.fasta\n";;
-open(ORI_PEP,">$out_dir/VA_Transcripts/reference_peptides.fasta") || die "[extract-cDNA.pl] $!: $out_dir/VA_Transcripts/reference_peptides.fasta\n";;
-open(ORI_PFA,">$out_dir/VA_Transcripts/reference_cDNA.exons") || die "[extract-cDNA.pl] $!: $out_dir/VA_Transcripts/reference_cDNA.exons\n";;
-open(GFF3_TRANS,">$out_dir/VA_Intermediate_Files/transcripts.gff3.tmp") || die "[extract-cDNA.pl] $!: $out_dir/VA_Intermediate_Files/transcripts.gff3.tmp\n";;
+open(ORI_CDNA,">$out_dir/CV_Transcripts/reference_cDNA.fasta") || die "[extract-cDNA.pl] $!: $out_dir/CV_Transcripts/reference_cDNA.fasta\n";;
+open(ORI_PEP,">$out_dir/CV_Transcripts/reference_peptides.fasta") || die "[extract-cDNA.pl] $!: $out_dir/CV_Transcripts/reference_peptides.fasta\n";;
+open(ORI_PFA,">$out_dir/CV_Transcripts/reference_cDNA.exons") || die "[extract-cDNA.pl] $!: $out_dir/CV_Transcripts/reference_cDNA.exons\n";;
+open(GFF3_TRANS,">$out_dir/CV_Intermediate_Files/transcripts.gff3.tmp") || die "[extract-cDNA.pl] $!: $out_dir/CV_Intermediate_Files/transcripts.gff3.tmp\n";;
 
 print GFF3_TRANS "\#\#gff-version 3\n";
 
@@ -231,14 +231,14 @@ for my $chr (sort keys %chrom)
 		print ORI_PFA lc($info[3]);
 		$exons ++;
 
-		print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tvariant_analyzer\tmRNA\t";
+		print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tCooVar\tmRNA\t";
 		print GFF3_TRANS "$info[0]\t$info[1]\t\.\t$exon_strand{$transcripts[$i]}\t\.\tID\=$transcripts[$i]";
 		print GFF3_TRANS ";gene=$exon_gene{$transcripts[$i]}" if (defined $exon_gene{$transcripts[$i]});
 		print GFF3_TRANS "\n";
 		
 		for(my $j=0;$j<@line;$j++)
 		{
-			print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tvariant_analyzer\tcoding_exon\t";
+			print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tCooVar\tcoding_exon\t";
 			$line[$j]=~/(\d+)\-(\d+)/;
 			my $start_ex = $1;
 			my $end_ex = $2;
@@ -264,10 +264,10 @@ close(ORI_PFA);
 close(SJ);
 close(GFF3_TRANS);
 
-print "[extract-cDNA.pl] $cdnas cDNAs written to $out_dir/VA_Transcripts/reference_cDNA.fasta\n";
-print "[extract-cDNA.pl] $peptides peptides written to $out_dir/VA_Transcripts/reference_peptides.fasta\n";
-print "[extract-cDNA.pl] $exons exons written to $out_dir/VA_Transcripts/reference_cDNA.exons\n";
-print "[extract-cDNA.pl] $junctions splice junctions written to $out_dir/VA_Intermediate_Files/splice_junctions.tmp\n";
+print "[extract-cDNA.pl] $cdnas cDNAs written to $out_dir/CV_Transcripts/reference_cDNA.fasta\n";
+print "[extract-cDNA.pl] $peptides peptides written to $out_dir/CV_Transcripts/reference_peptides.fasta\n";
+print "[extract-cDNA.pl] $exons exons written to $out_dir/CV_Transcripts/reference_cDNA.exons\n";
+print "[extract-cDNA.pl] $junctions splice junctions written to $out_dir/CV_Intermediate_Files/splice_junctions.tmp\n";
 
 print "[extract-cDNA.pl] Done at ";
 system("date");

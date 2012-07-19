@@ -12,20 +12,20 @@ open(SNP,$ARGV[0]) || die "[revise-GV-files.pl] $!: $ARGV[0]\n";
 open(INS,$ARGV[1]) || die "[revise-GV-files.pl] $!: $ARGV[1]\n";
 open(DEL,$ARGV[2]) || die "[revise-GV-files.pl] $!: $ARGV[2]\n";
 
-my $output_snp = "$out_dir/VA_SNPs/kept_" . basename($ARGV[0]);
-my $excluded_snp = "$out_dir/VA_SNPs/excluded_" . basename($ARGV[0]);
+my $output_snp = "$out_dir/CV_SNPs/kept_" . basename($ARGV[0]);
+my $excluded_snp = "$out_dir/CV_SNPs/excluded_" . basename($ARGV[0]);
 
 open(KEPT_SNP,">$output_snp");
 open(EXC_SNP,">$excluded_snp");
 
-my $output_ins = "$out_dir/VA_Insertions/kept_" . basename($ARGV[1]);
-my $excluded_ins = "$out_dir/VA_Insertions/excluded_" . basename($ARGV[1]);
+my $output_ins = "$out_dir/CV_Insertions/kept_" . basename($ARGV[1]);
+my $excluded_ins = "$out_dir/CV_Insertions/excluded_" . basename($ARGV[1]);
 
 open(KEPT_INS,">$output_ins");
 open(EXC_INS,">$excluded_ins");
 
-my $output_del = "$out_dir/VA_Deletions/kept_" . basename($ARGV[2]);
-my $excluded_del = "$out_dir/VA_Deletions/excluded_" . basename($ARGV[2]);
+my $output_del = "$out_dir/CV_Deletions/kept_" . basename($ARGV[2]);
+my $excluded_del = "$out_dir/CV_Deletions/excluded_" . basename($ARGV[2]);
 
 open(KEPT_DEL,">$output_del");
 open(EXC_DEL,">$excluded_del");

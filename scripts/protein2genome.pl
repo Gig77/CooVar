@@ -3,7 +3,7 @@
 #------------------------------------------------------------------------------------------------
 # DESCR: map protein coordinates back to genome
 # INPUT: 1) GFF3-compliant file with protein coordinates of protein-coding transcripts (read from STDIN) 
-#        2) GFF/GTF compliant file with transcript CDS definitions (same as used for running Variant-Analyzer)  
+#        2) GFF/GTF compliant file with transcript CDS definitions (same as used for running CooVar)  
 # OUTPUT: GFF3-compliant file with protein coordinates mapped to genomic coordinates (written to STDOUT). 
 #         The output of this script can be used as input for the script 'annotate-regions.pl' to identify 
 #         GVs overlapping with protein domains.

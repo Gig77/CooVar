@@ -56,8 +56,8 @@ while(<E>)
 }
 close(E);
 
-open(SNP_PFA,">$out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons\n");
-open(SNP_FA,">$out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta\n");
+open(SNP_PFA,">$out_dir/CV_Intermediate_Files/target_cDNA_SNPs.exons") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.exons\n");
+open(SNP_FA,">$out_dir/CV_Intermediate_Files/target_cDNA_SNPs.fasta") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.fasta\n");
 
 my ($snp_pfa_lines, $snp_fa_lines) = (0, 0);
 my $c;
@@ -113,8 +113,8 @@ for my $key (keys %trans_exons)
 close(SNP_PFA);
 close(SNP_FA);
 
-print "[apply_SNPs.pl] $snp_pfa_lines lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.exons\n";
-print "[apply_SNPs.pl] $snp_fa_lines lines written to $out_dir/VA_Intermediate_Files/target_cDNA_SNPs.fasta\n";
+print "[apply_SNPs.pl] $snp_pfa_lines lines written to $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.exons\n";
+print "[apply_SNPs.pl] $snp_fa_lines lines written to $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.fasta\n";
 
 print "[apply_SNPs.pl] Done at ";
 system("date");

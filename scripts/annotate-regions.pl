@@ -2,13 +2,13 @@
 
 #------------------------------------------------------------------------------------------------
 # DESCR: annotate GVs with genomic regions they overlap with
-# INPUT: 1) list of GVs in GVF format (VA_categorized_GVs.gvf output file) 
+# INPUT: 1) list of GVs in GVF format (CV_categorized_GVs.gvf output file) 
 #        2) genomic regions in GFF3 format (protein2genome.pl output)  
 # OUTPUT: GVs with annotated regions in GVF format
 #
 # SYNOPSIS:
 #
-#   ./annotate-regions.pl VA_categorized_GVs.gvf mapped_protein_domains.gff3 VA_categorized_GVs.w_regions.gvf
+#   ./annotate-regions.pl CV_categorized_GVs.gvf mapped_protein_domains.gff3 CV_categorized_GVs.w_regions.gvf
 #
 # Example region input lines (produced by protein2genome.pl):
 #
@@ -26,7 +26,7 @@
 #
 # Example output line:
 #
-#   V	variant_analyzer	SNV	7642800	7642800	.	+	.	ID=snp_245887;Variant_seq=G;Reference_seq=A;Variant_type=synonymous_codon;Variant_effect=synonymous_codon 0 mRNA CDS:F07C4.11;Note=tgt>tgC_C>C_aa11_codon_loc3;region=INTERPRO:IPR003582(CDS:F07C4.11)
+#   V	CooVar	SNV	7642800	7642800	.	+	.	ID=snp_245887;Variant_seq=G;Reference_seq=A;Variant_type=synonymous_codon;Variant_effect=synonymous_codon 0 mRNA CDS:F07C4.11;Note=tgt>tgC_C>C_aa11_codon_loc3;region=INTERPRO:IPR003582(CDS:F07C4.11)
 #
 # Note the "region=INTERPRO:IPR003582(CDS:F07C4.11)" annotation at the end of the line,
 # which was not present before in the GVF input and specifies with which genomic regions this paritcular GV 

@@ -8,9 +8,9 @@ system("date");
 open(D,$ARGV[0]) || die "[get-stats-SNPs.pl] $!: $ARGV[0]\n";
 my $out_dir = $ARGV[1] or die "[get-stats-SNPs.pl] output directory not specified\n";
 
-open(CB,">$out_dir/VA_SNPs/codon_bias.stat") || die "[get-stats-SNPs.pl] $!: $out_dir/VA_SNPs/codon_bias.stat\n";
-open(TYPE,">$out_dir/VA_SNPs/categorized_SNPs.stat") || die "[get-stats-SNPs.pl] $!: $out_dir/VA_SNPs/categorized_SNPs.stat\n";
-open(AMB,">$out_dir/VA_SNPs/ambiguous_SNPs.list") || die "[get-stats-SNPs.pl] $!: $out_dir/VA_SNPs/ambiguous_SNPs.list\n";
+open(CB,">$out_dir/CV_SNPs/codon_bias.stat") || die "[get-stats-SNPs.pl] $!: $out_dir/CV_SNPs/codon_bias.stat\n";
+open(TYPE,">$out_dir/CV_SNPs/categorized_SNPs.stat") || die "[get-stats-SNPs.pl] $!: $out_dir/CV_SNPs/categorized_SNPs.stat\n";
+open(AMB,">$out_dir/CV_SNPs/ambiguous_SNPs.list") || die "[get-stats-SNPs.pl] $!: $out_dir/CV_SNPs/ambiguous_SNPs.list\n";
 
 
 my %count_syn=();
@@ -96,7 +96,7 @@ for(my $i=0;$i<@file;$i++)
 	}
 }
 close(AMB);
-print "[get-stats-SNPs.pl] $ambs lines written to $out_dir/VA_SNPs/ambiguous_SNPs.list\n";
+print "[get-stats-SNPs.pl] $ambs lines written to $out_dir/CV_SNPs/ambiguous_SNPs.list\n";
 
 
 my $cbs = 0;
@@ -106,7 +106,7 @@ for my $key (sort keys %count_codon_bias)
 	$cbs ++;
 }
 close(CB);
-print "[get-stats-SNPs.pl] $cbs lines written to $out_dir/VA_SNPs/codon_bias.stat\n";
+print "[get-stats-SNPs.pl] $cbs lines written to $out_dir/CV_SNPs/codon_bias.stat\n";
 
 print TYPE keys(%count_extension) . " extension SNPs\n";
 print TYPE keys(%count_non_sense) . " non_sense SNPs\n";
@@ -200,7 +200,7 @@ for my $key (sort keys %chrom)
 }
 
 close(TYPE);
-print "[get-stats-SNPs.pl] Categorized SNP statistics written to $out_dir/VA_SNPs/categorized_SNPs.stat\n";
+print "[get-stats-SNPs.pl] Categorized SNP statistics written to $out_dir/CV_SNPs/categorized_SNPs.stat\n";
 
 print "[get-stats-SNPs.pl] Done at ";
 system("date");

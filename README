@@ -1,5 +1,5 @@
-Variant-Analyzer version 0.02 (Nov 21st, 2011)
-==============================================
+CooVar version 0.03 (Jul 19th, 2012)
+====================================
 
 (0) INSTALL
 (1) MOTIVATION
@@ -8,16 +8,16 @@ Variant-Analyzer version 0.02 (Nov 21st, 2011)
 (4) HOW TO RUN IT
 (5) INPUT
 (6) OUTPUT
-(7) TIPS FOR RUNNING VARIANT-ANALYZER FASTER
+(7) TIPS FOR RUNNING COOVAR FASTER
 
 (0) INSTALL
 -----------
 
-To install Variant-Analyzer, open a Linux terminal and run the following commands:
+To install CooVar, open a Linux terminal and run the following commands:
 
-tar xvfz variant-analyzer.tar.gz
-cd VARIANT_ANALYZER-1.0
-chmod +x scripts/* variant-analyzer.pl
+tar xvfz coovar-0.03.tar.gz
+cd COOVAR-0.03
+chmod +x scripts/* coovar.pl
 
 The program itself is a Perl script and requires the following Perl modules to be 
 installed on your system:
@@ -31,11 +31,13 @@ use Bio::DB::Fasta;
 use Bio::Seq;
 use Bio::SeqUtils;
 use Bio::SeqIO;
+use Set::IntervalTree;
+use Set::IntSpan;
 
 (1) MOTIVATION
 --------------
 
-Variant-Analyzer is conceived as an alternative to previous tools that are tightly linked to DBs (e.g. Ensembl, UCSC) and for which 
+CooVar was conceived as an alternative to previous tools that are tightly linked to databases (e.g. Ensembl, UCSC) and for which 
 there is no overall assessment of the impact of co-occurring GVs on protein-coding transcripts. The former makes it hard for people 
 working with newly sequenced genomes, genomes that are not available in such databases, or who just have an alternative 
 annotation of transcript models for which the impact of different GVs needs to be asssessed. The latter is misleading at the moment of 
@@ -47,7 +49,7 @@ independently.
 (2) WHAT IT DOES
 ----------------
 
-Variant-Analyzer takes as input:
+CooVar takes as input:
  
 (i)   transcript models (GFF3 or GTF format), 
 (ii)  the genomic DNA where the models reside and (FASTA format) 
@@ -65,7 +67,7 @@ and returns, for each transcript,
 (3) HOW IT DOES IT
 ------------------
 
-Variant-Analyzer pursues the following steps:
+CooVar pursues the following steps:
 
 (4.0) Revises the GV file in order to make sure that they follow the specified format (VCF or TAB). SNV and INS involving non-ACTG are 
 discarded. Lines not following the specified format are discarded. (revise-GV-files.pl)
@@ -84,7 +86,7 @@ is automatically inferred from the genome size (interval length = genome size / 
 (4) HOW TO RUN IT
 -----------------
 
- ./variant-analyzer.pl -e EXONS_GFF -r REFERENCE_FASTA (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [-o OUTPUT_DIRECTORY] [--circos]
+ ./coovar.pl -e EXONS_GFF -r REFERENCE_FASTA (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [-o OUTPUT_DIRECTORY] [--circos]
 
 The -o and --circos options are optional. Writing Circos data files is pursued as the very last step, after all the genomic variants 
 were applied to the transcripts. 
@@ -92,7 +94,7 @@ were applied to the transcripts.
 (5) INPUT
 ---------
 
-Variant-Analyzer takes the following input:
+CooVar takes the following input:
 
 (5.1) A gff3/gtf file with coding_exon sequences
 
@@ -133,7 +135,7 @@ chr1    hg18_ensGene    CDS     67162933        67163102        0.000000        
 IMPORTANT: Note that there are NO EXTRA LINES regarding gene/5_prime_UTR/3_prime_UTR/etc in the GFF/GTF input file, and different 
            exons belonging to the same transcript have the same ID.
 
-If the gene attribute is specified ('gene=' in gff3 or 'gene_id' in gtf) then this gene ID is carried over to the VA_transcripts.gff3
+If the gene attribute is specified ('gene=' in gff3 or 'gene_id' in gtf) then this gene ID is carried over to the CV_transcripts.gff3
 output file, which is useful if one wants to know the identity of genes effected by GVs in addition to transcripts IDs.  
 
 As you can see, the relevant columns are 
@@ -197,7 +199,7 @@ column4: end coordinate within chromosome/contig
 column5: insertion sequence
 
 Note1: even though insertions are usually annotated to occur between 2 adjacent basepairs X and X+1, this is not required by 
-Variant-Analyzer. If the start and end coordinate are separated by 1 or more basepairs, the region in between is regarded as a 
+CooVar. If the start and end coordinate are separated by 1 or more basepairs, the region in between is regarded as a 
 deletion associated with the insertion. For example, if the insertion is annotated to occur betwen basepairs 10 and 20, then basepairs 
 11 to 19 will be deleted.
 
@@ -217,8 +219,8 @@ Note2: for INS and DEL the start coordinate HAS to be lesser or equal than the e
 (5.4) Specifying the output directory
 -------------------------------------
 Parameter: -o
-Optional parameter that specifies the output directory for Variant-Analyzer output files. If the specified output directory 
-does not exist, Variant-Analyzer creates it. If omitted, output files are written to a subdirectory in the current directory
+Optional parameter that specifies the output directory for CooVar output files. If the specified output directory 
+does not exist, CooVar creates it. If omitted, output files are written to a subdirectory in the current directory
 named "output_YYYYMMDD_hhmmss", whereas YYYY, MM, DD, hh, mm, ss denote year, month, day, hour, minute, and second of the
 current date/time.
 
@@ -231,28 +233,28 @@ REFERENCE: the genomic DNA
 GVs: the list of Genomic Variations in either format
 TRANSCRIPTS: gff3 file with the coding exon coordinates
 
-The output of Variant-Analyzer is structured as follows:
+The output of CooVar ("CV") is structured as follows:
 .
-|-- VA_transcripts.gff3: transcripts, GVs impacting them, status of the ORF. See description in section 6.1 below
-|-- VA_categorized_GVs.gvf: each GV and its impact (or not, if silent) on all transcripts. See description in section 6.1 below
-|-- VA_Deletions
+|-- CV_transcripts.gff3: transcripts, GVs impacting them, status of the ORF. See description in section 6.1 below
+|-- CV_categorized_GVs.gvf: each GV and its impact (or not, if silent) on all transcripts. See description in section 6.1 below
+|-- CV_Deletions
 |   |-- distribution_deletions.out: length distribution of all deletions and of those deletions impacting exons.
-|   |-- excluded_GVs.VA_DEL: deletions excluded from the input for not accomplishing the specified format.
-|   |-- kept_GVs.VA_DEL: deletions kept from the input. The ones to be applied to the transcripts. 
-|   `-- kept_GVs.VA_DEL.circos: Circos frequency file for deletions. Designed for heatmap visualization.
-|-- VA_Insertions
+|   |-- excluded_GVs.CV_DEL: deletions excluded from the input for not accomplishing the specified format.
+|   |-- kept_GVs.CV_DEL: deletions kept from the input. The ones to be applied to the transcripts. 
+|   `-- kept_GVs.CV_DEL.circos: Circos frequency file for deletions. Designed for heatmap visualization.
+|-- CV_Insertions
 |   |-- distribution_insertions.out: length distribution of all insertions and of those insertions impacting exons.
-|   |-- excluded_GVs.VA_INS: insertions excluded from the input for not accomplishing the specified format.
-|   |-- kept_GVs.VA_INS: deletions kept from the input. The ones to be applied to the transcripts.
-|   `-- kept_GVs.VA_INS.circos: Circos frequency file for insertions. Designed for heatmap visualization.
-|-- VA_SNPs
+|   |-- excluded_GVs.CV_INS: insertions excluded from the input for not accomplishing the specified format.
+|   |-- kept_GVs.CV_INS: deletions kept from the input. The ones to be applied to the transcripts.
+|   `-- kept_GVs.CV_INS.circos: Circos frequency file for insertions. Designed for heatmap visualization.
+|-- CV_SNPs
 |   |-- ambiguous_SNPs.list: SNPs that fall into 2 or more categories by impacting transcripts differently
 |   |-- categorized_SNPs.stat: overall and chromosomal frequencies of SNPs per category.
 |   |-- codon_bias.stat: frequency of the location of the SNP within the codon (1,2, or 3) and its impact as syn/non-syn 
-|   |-- excluded_GVs.VA_SNP: SNPs excluded from the input for not accomplishing the specified format.
-|   |-- kept_GVs.list.VA_SNP: SNPs kept from the input. The ones to be applied to the transcripts. 
-|   `-- kept_GVs.list.VA_SNP.circos: Circos frequency file for deletions. Designed for heatmap visualization.
-|-- VA_Transcripts
+|   |-- excluded_GVs.CV_SNP: SNPs excluded from the input for not accomplishing the specified format.
+|   |-- kept_GVs.list.CV_SNP: SNPs kept from the input. The ones to be applied to the transcripts. 
+|   `-- kept_GVs.list.CV_SNP.circos: Circos frequency file for deletions. Designed for heatmap visualization.
+|-- CV_Transcripts
 |   |-- reference_cDNA.exons: reference cDNA shown per exon, per transcript.
 |   |-- variant_cDNA.exons: variant cDNA shown per exon, per transcript.
 |   |-- reference_cDNA.fasta: reference cDNA for each transcript.
@@ -263,7 +265,7 @@ The output of Variant-Analyzer is structured as follows:
 |   |-- exons_nuclear_DNA.gff3.circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
 |   `-- variant.stat: distribution of early stop codons along proteins, frequency of different ORF status and summary of impact of GVs on transcripts
 
-(6.1) VA_transcripts.gff3 and VA_categorized_GVs.gvf
+(6.1) CV_transcripts.gff3 and CV_categorized_GVs.gvf
  
 The Generic Feature Format Version 3 (GFF3) is a widely used and accepted format for representing genomic features such as trnascript 
 models and others. The Genome Variation Format (GVF) is an extension of GFF3 and it is designed to 
@@ -272,18 +274,18 @@ files are meant to contain complementary information. More details and specifica
 
 http://www.sequenceontology.org/
 
-Given this, Variant-Analyzer provides two outputs:
+Given this, CooVar provides two outputs:
 
-(6.1.1) VA_transcripts.gff3
+(6.1.1) CV_transcripts.gff3
 
-An example of a transcript in the VA_transcript.gff3 file is shown here:
+An example of a transcript in the CV_transcript.gff3 file is shown here:
 
-chr20   variant_analyzer        mRNA    11790883        11830259        .       -       .       ID=ENST00000427835;Note=snp_746931(conservative_missense_codon),ins_66552,del_83066,ORF_DISRUPTED(15.53)
-chr20   variant_analyzer        coding_exon     11790883        11791087        .       -       .       Parent=ENST00000427835
-chr20   variant_analyzer        coding_exon     11830155        11830259        .       -       .       Parent=ENST00000427835
+chr20   CooVar        mRNA    11790883        11830259        .       -       .       ID=ENST00000427835;Note=snp_746931(conservative_missense_codon),ins_66552,del_83066,ORF_DISRUPTED(15.53)
+chr20   CooVar        coding_exon     11790883        11791087        .       -       .       Parent=ENST00000427835
+chr20   CooVar        coding_exon     11830155        11830259        .       -       .       Parent=ENST00000427835
 
 
-For each transcript,Variant-Analyzer provides the coordinates of the overall coding region (mRNA) together with the coordinates for 
+For each transcript, CooVar provides the coordinates of the overall coding region (mRNA) together with the coordinates for 
 each coding exon. In the first line, The Note tag is used to describe , in a comma separated format,
 
 - all snps impacting the protein-coding transcript, and its categorization,
@@ -301,17 +303,17 @@ the reference.
 FULLY_DELETED: the variant transcript is such that only two, one or zero base pairs of the coding region remain after a deletion 
 event.
 
-Note: the information associated to each GV listed in the GFF3 file (e.g. snp_746931) can be found in the VA_categorized_GVs.gvf file.
+Note: the information associated to each GV listed in the GFF3 file (e.g. snp_746931) can be found in the CV_categorized_GVs.gvf file.
 
-(6.1.2) VA_categorized_GVs.gvf
+(6.1.2) CV_categorized_GVs.gvf
 
-An example of a SNV, INS and DEL in the VA_categorized_GVs.gvf file is shown:
+An example of a SNV, INS and DEL in the CV_categorized_GVs.gvf file is shown:
 
-chr15   variant_analyzer        SNV     80988136        80988136        .       +       .       ID=snp_14204;
+chr15   CooVar        SNV     80988136        80988136        .       +       .       ID=snp_14204;
 Variant_seq=G;Reference_seq=C;Variant_effect=non_conservative_missense_codon 0 mRNA ENST00000258884,ENST00000424700;
 Note=tgc>tgG_C>W_aa122_codon_loc3_RADICAL(215),tgc>tgG_C>W_aa122_codon_loc3_RADICAL(215)
-chr14   variant_analyzer        insertion       90740444        90740445        .       +       .       ID=ins_1;Variant_seq=G;Reference_seq=~;Variant_effect=frameshift_variant 0 mRNA ENST00000380590
-chr14   variant_analyzer        deletion        94935764        94935766        .       +       .       ID=del_9;Variant_seq=-;Reference_seq=~;Variant_effect=inframe_variant 0 mRNA ENST00000380365,ENST00000337425,ENST00000448305
+chr14   CooVar        insertion       90740444        90740445        .       +       .       ID=ins_1;Variant_seq=G;Reference_seq=~;Variant_effect=frameshift_variant 0 mRNA ENST00000380590
+chr14   CooVar        deletion        94935764        94935766        .       +       .       ID=del_9;Variant_seq=-;Reference_seq=~;Variant_effect=inframe_variant 0 mRNA ENST00000380365,ENST00000337425,ENST00000448305
 
 - For each case, columns 1, 4 and 5 represent the chromosome, start and end coordinate of the GV.
 
@@ -329,11 +331,12 @@ field will be "inframe_variant". All GVs impacting a transcript are found in the
 -- functional impact of the amino acid change for mis-sense mutations together with the associated Grantham Scorein parenthesis.
 
 
-(7) TIPS FOR RUNNING VARIANT-ANALYZER FASTER
+(7) TIPS FOR RUNNING COOVAR FASTER
 --------------------------------------------
 
-Some steps of Variant-Analyzer can take time when run on very large (human sized) data files. However, even in this case 
-Variant-Analyzer should return results in a reasonable amount of time (~1h). One way to speed up execution is to run 
-Variant-Analyzer for different chromosomes separately. Also, consider commenting out lines in the variant-analzer.pl script
+Some steps of CooVar can take time when run on very large (human sized) data files. However, even in this case 
+CooVar should return results in a reasonable amount of time (~1h). One way to speed up execution is to run 
+CooVar for different chromosomes separately. Also, consider commenting out lines in the coovar.pl script
 if re-running a particular step of the analysis is not required. For example, by commenting out the line executing
-the 'extract-cDNA.pl' script, Variant-Analyzer would not extract cDNA sequences when it is run again.
+the 'extract-cDNA.pl' script, CooVar would not extract cDNA sequences when it is run again, using existing output
+files from previous runs.

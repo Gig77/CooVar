@@ -183,8 +183,8 @@ while(<H>)
 }
 close(H);
 
-open(CAT,">$out_dir/VA_Intermediate_Files/categorized_snp_coords.list") || die "[categorize-SNPs.pl] $!: $out_dir/VA_Intermediate_Files/categorized_snp_coords.list\n";
-open(GVF,">$out_dir/VA_categorized_GVs.gvf") || die "[categorize-SNPs.pl] $!: $out_dir/VA_categorized_GVs.gvf\n";
+open(CAT,">$out_dir/CV_Intermediate_Files/categorized_snp_coords.list") || die "[categorize-SNPs.pl] $!: $out_dir/CV_Intermediate_Files/categorized_snp_coords.list\n";
+open(GVF,">$out_dir/CV_categorized_GVs.gvf") || die "[categorize-SNPs.pl] $!: $out_dir/CV_categorized_GVs.gvf\n";
 print GVF "\#\#gff-version 3\n";
 print GVF "\#\#gvf-version 1\.05\n";
 
@@ -432,7 +432,7 @@ for my $key (keys %snp2gvf_variant)
 	my $ref = $1;
 	my $tar = $2;
 
-	print GVF "$chrom\tvariant\_analyzer\tSNV\t$coord\t$coord\t\.\t\+\t\.\t";
+	print GVF "$chrom\tCooVar\tSNV\t$coord\t$coord\t\.\t\+\t\.\t";
 	print GVF "ID\=snp\_$snp_id\;Variant\_seq=$tar\;Reference\_seq\=$ref\;";
 	print GVF "Variant\_type\=$snp_type[1];";  # 2011-11-21 | CF | additional tag for easy track grouping in GBrowse
 	print GVF "Variant\_effect\=$snp_type[1]";
@@ -464,15 +464,15 @@ for my $key (keys %snp2gvf_variant)
 }
 close(GVF);
 
-print "[categorize-SNPs.pl] $gvfs GVs written to $out_dir/VA_categorized_GVs.gvf\n";
+print "[categorize-SNPs.pl] $gvfs GVs written to $out_dir/CV_categorized_GVs.gvf\n";
 
 #now we annotate the SNPs IDs in the gff3 file for transcripts
 
-open(TMP_GFF3,">$out_dir/VA_Intermediate_Files/transcripts_snps_applied.gff3.tmp") || die "[categorize-SNPs.pl] $!: $out_dir/VA_Intermediate_Files/transcripts_snps_applied.gff3.tmp\n";
+open(TMP_GFF3,">$out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp") || die "[categorize-SNPs.pl] $!: $out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp\n";
 while(<I>)
 {
 	chomp($_);
-	if($_=~/^\#/ || $_=~/\tvariant\_analyzer\tcoding\_exon\t/)
+	if($_=~/^\#/ || $_=~/\tCooVar\tcoding\_exon\t/)
 	{
 		print TMP_GFF3 $_,"\n";
 		next;
