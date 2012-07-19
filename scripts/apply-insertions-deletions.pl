@@ -5,6 +5,7 @@ use Bio::Seq;
 use Bio::SeqUtils;
 use Bio::SeqIO;
 use POSIX qw(ceil floor);
+use Set::IntervalTree;
 
 print "[apply-insertions-deletions.pl] Start executing script on ";
 system("date");
@@ -53,90 +54,67 @@ sub evaluate_cDNA
 	return @result;
 }
 
+# hash of Set::InvervalTree, one per chromosome, to efficiently query for overlaps between exons and GVs
+my (%del_tree, %ins_tree); 
+
 sub get_overlap_del
 {
-        my $transcript_exons = shift;
-        my $transcript_start = shift;
-        my $transcript_end  = shift;
-        my $GV_ref = shift;
-        my $label = shift;
-        my @GVs = @$GV_ref;
+	my $chr = shift;
+	my $transcript_exons = shift;
 
-        my $overlapping_GVs = "";
+    my $overlapping_GVs = "";
 
-        for (my $i=0;$i<@GVs;$i++)
-        {
-                $GVs[$i]=~/^(\d+)\.\.(\d+)/;
-                my $GV_start = $1;
-		my $GV_end = $2;
+	my @exons = split(/\n/,$transcript_exons);
+	for (my $i=0;$i<@exons;$i++)
+	{
+		$exons[$i]=~/\((\d+)\-(\d+)\)\s+/;
+		my $exon_start = $1;
+		my $exon_end = $2;
 
-                next if ($GV_end < $transcript_start || $GV_start > $transcript_end);
-                #to this point, it overlaps with the genomic span
-        
-                #now we test if it overlaps with an exon
-                my @exons = split(/\n/,$transcript_exons);
-                for (my $i=0;$i<@exons;$i++)
-                {
-                        $exons[$i]=~/\((\d+)\-(\d+)\)\s+/;
-                        my $exon_start = $1;
-                        my $exon_end = $2;
+		($exon_start, $exon_end) = ($exon_end, $exon_start) 
+			if ($exon_start > $exon_end); # happens for transcripts in the - strand
+		$exon_end ++;  # to find GVs overlapping EXACTLY with exon end coordinate
 
-                        #happens for transcripts in the - strand
-                        if($exon_start > $exon_end)
-                        {
-                                my $aux  = $exon_start;
-                                $exon_start = $exon_end;
-                                $exon_end = $aux;
-                        }
-
-                        next if($GV_end < $exon_start || $GV_start > $exon_end);
-                        $overlapping_GVs .= "$GV_start\.\.$GV_end ";
-			last;		#we can move on	to the next insertion
-                }
-        }
-        return $overlapping_GVs;
+		next if (!$del_tree{$chr});
+		my $overlaps = $del_tree{$chr}->fetch($exon_start, $exon_end); # WARNING: do not include ANY expression in parameter list; confuses C function call 
+		foreach my $overlap (@$overlaps)
+		{
+#			print "OVERLAP: $del_tree{$chr};chr=$chr exon_start=$exon_start exon_end=$exon_end overlap=$overlap\n";
+			my ($gv_start, $gv_end) = split("\t", $overlap);
+	        $overlapping_GVs .= "$gv_start\.\.$gv_end ";
+		}
+	}
+    
+    return $overlapping_GVs;
 }
 
 sub get_overlap_ins
 {
+	my $chr = shift;
 	my $transcript_exons = shift;
-	my $transcript_start = shift;
-	my $transcript_end  = shift;
-	my $GV_ref = shift;
-	my $label = shift;
-	my @GVs = @$GV_ref;
 
 	my $overlapping_GVs = "";
 
-	for (my $i=0;$i<@GVs;$i++)
+	my @exons = split(/\n/,$transcript_exons);
+	for (my $i=0;$i<@exons;$i++)
 	{
-		$GVs[$i]=~/^(\d+)\.\./;
-		my $GV_coord = $1;
+		$exons[$i]=~/\((\d+)\-(\d+)\)\s+/;
+		my $exon_start = $1;
+		my $exon_end = $2;
 
-		next if ($GV_coord < $transcript_start || $GV_coord >= $transcript_end);
-		#to this point, it overlaps with the genomic span
-	
-		#now we test if it overlaps with an exon
-		my @exons = split(/\n/,$transcript_exons);
-		for (my $i=0;$i<@exons;$i++)
+		($exon_start, $exon_end) = ($exon_end, $exon_start) 
+			if ($exon_start > $exon_end); # happens for transcripts in the - strand
+#		$exon_end ++;  # to find GVs overlapping EXACTLY with exon end coordinate
+		
+		next if (!$ins_tree{$chr});
+		my $overlaps = $ins_tree{$chr}->fetch($exon_start, $exon_end); # WARNING: do not include ANY expression in parameter list; confuses C function call 
+		foreach my $overlap (@$overlaps)
 		{
-			$exons[$i]=~/\((\d+)\-(\d+)\)\s+/;
-			my $exon_start = $1;
-			my $exon_end = $2;
-
-			#happens for transcripts in the - strand
-			if($exon_start > $exon_end)
-			{
-				my $aux  = $exon_start;	
-				$exon_start = $exon_end;
-				$exon_end = $aux;
-			}
-
-			next if($GV_coord < $exon_start || $GV_coord >=$exon_end);
-			$overlapping_GVs .= $GV_coord . " ";
-			last;	#we can move on to the next insertion
+			my ($gv_start, $gv_end) = split("\t", $overlap);
+	        $overlapping_GVs .= "$gv_start ";
 		}
 	}
+
 	return $overlapping_GVs;
 }
 
@@ -160,6 +138,7 @@ open(TRANS_GFF3,$trans_gff3) || die "[apply-insertions-deletions.pl] $!: $trans_
 my %ref_exons=();
 my $ref_id;
 
+print "[apply-insertions-deletions.pl] Reading file $ref_pseudo_fasta ...\n";
 while(<cDNA_ref>)
 {
         chomp($_);
@@ -189,6 +168,7 @@ my $id;
 
 my %chrom_trans=();
 
+print "[apply-insertions-deletions.pl] Reading file $pseudo_fasta ...\n";
 while(<cDNA_SNP>)
 {
         chomp($_);
@@ -203,7 +183,9 @@ while(<cDNA_SNP>)
                 $trans_start{$id} = $start;
                 $trans_end{$id} = $end;
                 $trans_strand{$id} = $strand;
-		$chrom_trans{$chrom}.=$id . " ";
+		$chrom_trans{$chrom} = [] if (!exists $chrom_trans{$chrom});
+		push(@{$chrom_trans{$chrom}}, $id);
+#		$chrom_trans{$chrom}.=$id . " ";
         }
         else
         {
@@ -215,6 +197,7 @@ close(cDNA_SNP);
 my %trans2snp=();
 my %trans2splice=();
 
+print "[apply-insertions-deletions.pl] Reading file $categorized_snps ...\n";
 while(<SNP>)
 {
 	chomp($_);
@@ -247,14 +230,15 @@ while(<SNP>)
 close(SNP);
 
 my %to_ins=();
-my %to_del=();
-my %range_del=();
+#my %to_del=();
+#my %range_del=();
 my %chrom_ins=();
 my %chrom_del=();
 
 
 my (@dist_ins,@dist_del,@dist_ins_exons,@dist_del_exons);
 
+print "[apply-insertions-deletions.pl] Reading file $insertion_list ...\n";
 while(<INS>)
 {
 	chomp($_);
@@ -267,22 +251,37 @@ while(<INS>)
 	{
 		my $start_del = $line[1] +1;
 		my $end_del = $line[2] - 1;
-		$range_del{"$line[0]\:$start_del\.\.$end_del"}++;
+#		$range_del{"$line[0]\:$start_del\.\.$end_del"}++;
 
 
 		my $len_del = $end_del - $start_del + 1;
 		$dist_del[$len_del]++;
 
-		for (my $i=$start_del;$i<=$end_del;$i++)
-		{
-			$to_del{"$line[0]\:$i"}++;
-		}
-		$chrom_del{$line[0]}.="$start_del\.\.$end_del ";
+#		for (my $i=$start_del;$i<=$end_del;$i++)
+#		{
+#			$to_del{"$line[0]\:$i"}++;
+#		}
+		
+		# interval must be at least 1bp, otherwise overlaps with exon start coordinate will be missed
+		$del_tree{$line[0]} = Set::IntervalTree->new if (!$del_tree{$line[0]});
+		my ($id, $start, $end) = ("$start_del\t$end_del", $start_del, $end_del + 1);
+		$del_tree{$line[0]}->insert($id, $start, $end); # WARNING: do not include ANY expression in parameter list; confuses C function call and strange stuff is inserted into tree!  
+
+		$chrom_del{$line[0]} = [] if (!exists $chrom_del{$line[0]});
+		push(@{$chrom_del{$line[0]}}, "$start_del\.\.$end_del");
 	}
-	$chrom_ins{$line[0]}.="$line[1]\.\.$line[2]\-$line[3] ";
+
+	# interval must be at least 1bp, otherwise overlaps with exon start coordinate will be missed
+ 	$ins_tree{$line[0]} = Set::IntervalTree->new if (!$ins_tree{$line[0]});
+	my ($id, $start, $end) = ("$line[1]\t$line[2]", $line[1], $line[1] + 1);
+	$ins_tree{$line[0]}->insert($id, $start, $end); # WARNING: do not include ANY expression in parameter list; confuses C function call and strange stuff is inserted into tree!
+	
+	$chrom_ins{$line[0]} = [] if (!exists $chrom_ins{$line[0]});
+	push(@{$chrom_ins{$line[0]}}, "$line[1]\.\.$line[2]\-$line[3]");
 }
 close(INS);
 
+print "[apply-insertions-deletions.pl] Reading file $deletion_list ...\n";
 while(<DEL>)
 {
 	chomp($_);
@@ -291,23 +290,30 @@ while(<DEL>)
 	my $len_del = $line[2] - $line[1] + 1;
         $dist_del[$len_del]++;
 
-	$range_del{"$line[0]\:$line[1]\.\.$line[2]"}++;
-	for(my $i=$line[1];$i<=$line[2];$i++)
-	{
-		$to_del{"$line[0]\:$i"}++;
-	}
-	$chrom_del{$line[0]}.="$line[1]\.\.$line[2] ";
+	# interval must be at least 1bp, otherwise overlaps with exon start coordinate will be missed
+	$del_tree{$line[0]} = Set::IntervalTree->new if (!$del_tree{$line[0]});
+	my ($id, $start, $end) = ("$line[1]\t$line[2]", $line[1], $line[2] + 1);
+	$del_tree{$line[0]}->insert($id, $start, $end); # WARNING: do not include ANY expression in parameter list; confuses C function call and strange stuff is inserted into tree! 
+
+#	$range_del{"$line[0]\:$line[1]\.\.$line[2]"}++;
+#	for(my $i=$line[1];$i<=$line[2];$i++)
+#	{
+#		$to_del{"$line[0]\:$i"}++;
+#	}
+
+	$chrom_del{$line[0]} = [] if (!exists $chrom_del{$line[0]});
+	push(@{$chrom_del{$line[0]}}, "$line[1]\.\.$line[2]");
 }
 close(DEL);
 
-open(MOD_PFA,">$out_dir/VA_Transcripts/variant_cDNA.exons") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant_cDNA.exons\n";;
-open(MOD_cDNA,">$out_dir/VA_Transcripts/variant_cDNA.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant_cDNA.fasta\n";
-open(MOD_PEP,">$out_dir/VA_Transcripts/variant_peptides.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant_peptides.fasta\n";
-open(GENE_SUMMARY,">$out_dir/VA_Intermediate_Files/variant.summary") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Intermediate_Files/variant.summary\n";
-open(STAT,">$out_dir/VA_Transcripts/variant.stat") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/variant.stat\n";
-open(ALIGNMENT,">$out_dir/VA_Transcripts/reference_variant.alignment") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Transcripts/reference_variant.alignment\n";
-open(DIST_INS,">$out_dir/VA_Insertions/distribution_insertions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Insertions/distribution_insertions.out\n";
-open(DIST_DEL,">$out_dir/VA_Deletions/distribution_deletions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_Deletions/distribution_deletions.out\n";
+open(MOD_PFA,">$out_dir/CV_Transcripts/variant_cDNA.exons") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant_cDNA.exons\n";;
+open(MOD_cDNA,">$out_dir/CV_Transcripts/variant_cDNA.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant_cDNA.fasta\n";
+open(MOD_PEP,">$out_dir/CV_Transcripts/variant_peptides.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant_peptides.fasta\n";
+open(GENE_SUMMARY,">$out_dir/CV_Intermediate_Files/variant.summary") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Intermediate_Files/variant.summary\n";
+open(STAT,">$out_dir/CV_Transcripts/variant.stat") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant.stat\n";
+open(ALIGNMENT,">$out_dir/CV_Transcripts/reference_variant.alignment") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/reference_variant.alignment\n";
+open(DIST_INS,">$out_dir/CV_Insertions/distribution_insertions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Insertions/distribution_insertions.out\n";
+open(DIST_DEL,">$out_dir/CV_Deletions/distribution_deletions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Deletions/distribution_deletions.out\n";
 
 my %count_orf_status=();
 my @dist_disrupted;
@@ -328,9 +334,12 @@ my %transcript2fate=();
 my ($gvfs, $mod_pfas, $mod_cdnas, $summaries, $mod_peps, $alignments) = (0, 0, 0, 0, 0, 0);
 for my $key (keys %chrom_trans)
 {
-	my @transcripts = split(/\s+/,$chrom_trans{$key});
-	my @insertions = split(/\s+/,$chrom_ins{$key});
-	my @deletions = split(/\s+/,$chrom_del{$key});
+	print "[apply-insertions-deletions.pl] Processing chromosome $key on ";
+    system("date");
+    
+#	my @transcripts = split(/\s+/,$chrom_trans{$key});
+#	my @insertions = split(/\s+/,$chrom_ins{$key});
+#	my @deletions = split(/\s+/,$chrom_del{$key});
 
 	my %seen_dist_ins=();
 	my %seen_dist_del=();
@@ -338,35 +347,36 @@ for my $key (keys %chrom_trans)
 	my %ins2gvf_variant=();
 	my %del2gvf_variant=();
 
-	for (my $i=0;$i<@transcripts;$i++)
+	for (my $i=0; $chrom_trans{$key} and $i < @{$chrom_trans{$key}};$i++)
 	{
-		$all_transcripts{$transcripts[$i]}++;
-		print ALIGNMENT "\>$transcripts[$i]\t$key\t$trans_start{$transcripts[$i]}\t$trans_end{$transcripts[$i]}\t$trans_strand{$transcripts[$i]}\n";
+		my $transcript = $chrom_trans{$key}->[$i];
+		$all_transcripts{$transcript}++;
+		print ALIGNMENT "\>$transcript\t$key\t$trans_start{$transcript}\t$trans_end{$transcript}\t$trans_strand{$transcript}\n";
 		$alignments ++;
-		#print STDERR "Checking transcript $transcripts[$i]\t";
+		#print STDERR "Checking transcript $transcript\t";
 		#returns insertion coordinates that overlap with this transcript's exon(s)
-		my $overlap_ins = get_overlap_ins($trans_exons{$transcripts[$i]},$trans_start{$transcripts[$i]},$trans_end{$transcripts[$i]},\@insertions);
+		my $overlap_ins = get_overlap_ins($key, $trans_exons{$transcript});
 
 		#returns deletion coordinates that overlap with this transcript's exon(s)
-		my $overlap_del	= get_overlap_del($trans_exons{$transcripts[$i]},$trans_start{$transcripts[$i]},$trans_end{$transcripts[$i]},\@deletions);
+		my $overlap_del	= get_overlap_del($key, $trans_exons{$transcript});
 
-		print MOD_PFA "\>$transcripts[$i]\t$trans_chrom{$transcripts[$i]}\t$trans_start{$transcripts[$i]}\t";
-		print MOD_PFA "$trans_end{$transcripts[$i]}\t$trans_strand{$transcripts[$i]}\n";
+		print MOD_PFA "\>$transcript\t$trans_chrom{$transcript}\t$trans_start{$transcript}\t";
+		print MOD_PFA "$trans_end{$transcript}\t$trans_strand{$transcript}\n";
 		$mod_pfas ++;
 
-        print MOD_cDNA "\>$transcripts[$i]\t$trans_chrom{$transcripts[$i]}\t$trans_start{$transcripts[$i]}\t";
-        print MOD_cDNA "$trans_end{$transcripts[$i]}\t$trans_strand{$transcripts[$i]}\n";
+        print MOD_cDNA "\>$transcript\t$trans_chrom{$transcript}\t$trans_start{$transcript}\t";
+        print MOD_cDNA "$trans_end{$transcript}\t$trans_strand{$transcript}\n";
         $mod_cdnas ++;
 
-		print GENE_SUMMARY "$transcripts[$i]\t$trans2snp{$transcripts[$i]}\t";
+		print GENE_SUMMARY "$transcript\t$trans2snp{$transcript}\t";
 
-		#print STDERR "$transcripts[$i]\t$overlap_ins\t$overlap_del\n";
+		#print STDERR "$transcript\t$overlap_ins\t$overlap_del\n";
 
-                my @aux_ref_exons = split(/\n/,$ref_exons{$transcripts[$i]});
+        my @aux_ref_exons = split(/\n/,$ref_exons{$transcript});
 		@aux_ref_exons = reverse(@aux_ref_exons);
 
-        	my @exons = split(/\n/,$trans_exons{$transcripts[$i]});
-	        @exons = reverse(@exons);       #here I have the exons going from 3' to 5'
+      	my @exons = split(/\n/,$trans_exons{$transcript});
+        @exons = reverse(@exons);       #here I have the exons going from 3' to 5'
 
 		my %to_delete=();
 		my %to_insert=();
@@ -378,9 +388,9 @@ for my $key (keys %chrom_trans)
 		{
 			my $aux_coord = "$key\:$ins[$j]";
 			$seen_ins{"$ins[$j]\.\.$to_ins{$aux_coord}"}++;
-			$trans2ins{$transcripts[$i]}=1;
+			$trans2ins{$transcript}=1;
 			my $end_ins;
-			if($trans_strand{$transcripts[$i]} eq '-')
+			if($trans_strand{$transcript} eq '-')
 			{
 				$to_ins{"$key\:$ins[$j]"}=~/^(\d+)\-(\S+)$/;
 				$end_ins = $1;
@@ -403,9 +413,10 @@ for my $key (keys %chrom_trans)
 			$dist_ins_exons[$len_ins]++;
 		}
 		print GENE_SUMMARY "\t";
-                for (my $j=0;$j<@dels;$j++)
-                {
-			$trans2del{$transcripts[$i]}=1;
+		
+        for (my $j=0;$j<@dels;$j++)
+        {
+			$trans2del{$transcript}=1;
 			$dels[$j]=~/(\d+)\.\.(\d+)/;
 			my $start_del = $1;
 			my $end_del = $2;
@@ -417,11 +428,12 @@ for my $key (keys %chrom_trans)
 				$to_delete{$k}++;
 			}
 			print GENE_SUMMARY "$key\:$dels[$j] ";
-                        next if (defined $seen_dist_del{"$key\:$dels[$j]"}); 
-                        $seen_dist_del{"$key\:$dels[$j]"}++;
-                        my $len_del = $end_del - $start_del +1;
-                        $dist_del_exons[$len_del]++;
-                }
+        
+            next if (defined $seen_dist_del{"$key\:$dels[$j]"}); 
+            $seen_dist_del{"$key\:$dels[$j]"}++;
+            my $len_del = $end_del - $start_del +1;
+            $dist_del_exons[$len_del]++;
+        }
 
 		print GENE_SUMMARY "\t";
 		
@@ -431,17 +443,17 @@ for my $key (keys %chrom_trans)
 		my @ref_ali_exons;
 		my @tar_ali_exons;
 
-        	for(my $j=0;$j<@exons;$j++)
-        	{
-	                my @ref_alignment;
-        	        my @tar_alignment;
+      	for(my $j=0;$j<@exons;$j++)
+      	{
+            my @ref_alignment;
+        	my @tar_alignment;
 
-                	my ($exon_prefix,$exon_start,$exon_end, $exon_seq);
-                	$exons[$j]=~/^(\((\d+)\-(\d+)\))\s+(\S+)/;
-                	$exon_prefix=$1;
-                	$exon_start = $2;
-                	$exon_end = $3;
-                	$exon_seq = $4;
+            my ($exon_prefix,$exon_start,$exon_end, $exon_seq);
+            $exons[$j]=~/^(\((\d+)\-(\d+)\))\s+(\S+)/;
+            $exon_prefix=$1;
+            $exon_start = $2;
+            $exon_end = $3;
+            $exon_seq = $4;
 
 			$aux_ref_exons[$j]=~/^\(\d+\-\d+\)\s+(\S+)/;
 			my $ref_exon_seq = $1;
@@ -450,83 +462,83 @@ for my $key (keys %chrom_trans)
 
 			$len_before+=length($exon_seq);
                 
-                	my @nucleotides = split(//,$exon_seq);
-                	@nucleotides = reverse(@nucleotides);   #since we want to go from 3' to 5'
+           	my @nucleotides = split(//,$exon_seq);
+          	@nucleotides = reverse(@nucleotides);   #since we want to go from 3' to 5'
 
-	                my %to_consider=();
-        	        my @to_print;
+            my %to_consider=();
+   	        my @to_print;
 
-	                if($trans_strand{$transcripts[$i]} eq '+')
-        	        {
-                	        for (my $k=$exon_end;$k>=$exon_start;$k--)
-                        	{
+            if($trans_strand{$transcript} eq '+')
+   	        {
+      	        for (my $k=$exon_end;$k>=$exon_start;$k--)
+               	{
 				 	$to_consider{$k} = $nucleotides[$exon_end - $k];
-                                	if(defined $to_delete{$k})
-                                	{
-                                        	$to_consider{$k}="";
+                   	if(defined $to_delete{$k})
+                   	{
+                       	$to_consider{$k}="";
 						push @ref_alignment,$ref_nts[$exon_end - $k];
 						push @tar_alignment,"\-"; 
-                                	}
-                                	if(defined $to_insert{$k})
-                                	{
-                                        	$to_consider{$k}.=$to_insert{$k};
+                   	}
+                   	if(defined $to_insert{$k})
+                   	{
+                       	$to_consider{$k}.=$to_insert{$k};
 						for(my $l=0;$l<length($to_insert{$k});$l++)
 						{
 							push @ref_alignment,"\-";
 						}
-                                                my @aux_ins = split(//,$to_insert{$k});
-                                                for(my $l=$#aux_ins;$l>=0;$l--)
-                                                {
-                                                        push @tar_alignment,$aux_ins[$l];
-                                                }
-                                	}
+                        my @aux_ins = split(//,$to_insert{$k});
+                        for(my $l=$#aux_ins;$l>=0;$l--)
+                        {
+	                        push @tar_alignment,$aux_ins[$l];
+                        }
+                   	}
 					if(!defined $to_delete{$k})
 					{
 						push @ref_alignment,$ref_nts[$exon_end - $k];
 						push @tar_alignment,$nucleotides[$exon_end - $k];
 					}
-                                	push @to_print,$to_consider{$k};
-                        	}
+                   	push @to_print,$to_consider{$k};
+               	}
 			}
-	                else
-        	        {
-                	        for (my $k=$exon_end;$k<=$exon_start;$k++)
-                        	{
-                                	$to_consider{$k} = $nucleotides[$k-$exon_end];
-                                        if(!defined $to_delete{$k})
-                                        {
-                                                push @ref_alignment,$ref_nts[$k - $exon_end];
-                                                push @tar_alignment,$nucleotides[$k - $exon_end];
-                                        }
-
-                                	if(defined $to_delete{$k})
-                                	{
-                                        	$to_consider{$k}="";
-                                                push @ref_alignment,$ref_nts[$k - $exon_end];
-                                               	push @tar_alignment,"\-";
-                                	}
-                                	if(defined $to_insert{$k})
-                                	{
-                                        	$to_consider{$k}=$to_insert{$k} . $to_consider{$k};
-                                                for(my $l=0;$l<length($to_insert{$k});$l++)
-                                                {
-                                                        push @ref_alignment,"\-";
-                                                }
+	        else
+            {
+	            for (my $k=$exon_end;$k<=$exon_start;$k++)
+	           	{
+	               	$to_consider{$k} = $nucleotides[$k-$exon_end];
+	                if(!defined $to_delete{$k})
+	                {
+	                    push @ref_alignment,$ref_nts[$k - $exon_end];
+	                    push @tar_alignment,$nucleotides[$k - $exon_end];
+	                }
+	
+	               	if(defined $to_delete{$k})
+	               	{
+		            	$to_consider{$k}="";
+	                    push @ref_alignment,$ref_nts[$k - $exon_end];
+	                  	push @tar_alignment,"\-";
+	               	}
+		        	if(defined $to_insert{$k})
+	               	{
+	    				$to_consider{$k}=$to_insert{$k} . $to_consider{$k};
+	                    for(my $l=0;$l<length($to_insert{$k});$l++)
+	                    {
+	                    	push @ref_alignment,"\-";
+						}
 						my @aux_ins = split(//,$to_insert{$k});
 						for(my $l=$#aux_ins;$l>=0;$l--)
 						{
-                                                	push @tar_alignment,$aux_ins[$l];
+							push @tar_alignment,$aux_ins[$l];
 						}
-                                	}
-                                	push @to_print,$to_consider{$k};
-                        	}
-                	}
-	                my $new_exon="";
-        	        for(my $k=$#to_print;$k>=0;$k--)
-                	{
-                        	$new_exon.=$to_print[$k];
-                	}
-	                $exons[$j]=~s/$exon_seq/$new_exon/;
+					}
+					push @to_print,$to_consider{$k};
+				}
+           	}
+			my $new_exon="";
+			for(my $k=$#to_print;$k>=0;$k--)
+			{
+				$new_exon.=$to_print[$k];
+			}
+			$exons[$j]=~s/$exon_seq/$new_exon/;
 
 			my $ref_ali_exon=$exon_prefix . "\t";
 			my $len_prefix = length($exon_prefix);
@@ -557,21 +569,21 @@ for my $key (keys %chrom_trans)
 
 
 			$count_spacing = 0;
-        	        for (my $k=$#tar_alignment;$k>=0;$k--)
-                	{ 
-                                if($count_spacing == 80)
-                                {
-                                        $tar_ali_exon.="\n";
-                                        for(my $l=0;$l<$len_prefix;$l++)
-                                        { 
-                                                $tar_ali_exon.=" ";
-                                       	}
-                                        $tar_ali_exon.="\t";
+  	        for (my $k=$#tar_alignment;$k>=0;$k--)
+          	{ 
+				if($count_spacing == 80)
+				{
+					$tar_ali_exon.="\n";
+					for(my $l=0;$l<$len_prefix;$l++)
+					{ 
+						$tar_ali_exon.=" ";
+					}
+					$tar_ali_exon.="\t";
 					$count_spacing=0;
-                                }
-                                $tar_ali_exon.=$tar_alignment[$k];
-                                $count_spacing++;
-               		}
+				}
+				$tar_ali_exon.=$tar_alignment[$k];
+				$count_spacing++;
+			}
 
 			unshift @ref_ali_exons,$ref_ali_exon;
 			unshift @tar_ali_exons,$tar_ali_exon;
@@ -606,15 +618,15 @@ for my $key (keys %chrom_trans)
 
 		$len_after = length($modified_cDNA);
 
-		my @assessed_pep = evaluate_cDNA($modified_cDNA,$transcripts[$i]);
+		my @assessed_pep = evaluate_cDNA($modified_cDNA,$transcript);
 
 		my $mod_pep_seq= $assessed_pep[0];
 		my $mod_pep_status = $assessed_pep[1];
 		my $mod_pep_perc = $assessed_pep[2];
 
-		if(!defined $trans2snp{$transcripts[$i]} && 
-		!defined $trans2ins{$transcripts[$i]} && 
-		!defined $trans2del{$transcripts[$i]})
+		if(!defined $trans2snp{$transcript} && 
+		!defined $trans2ins{$transcript} && 
+		!defined $trans2del{$transcript})
 		{
 			$mod_pep_status = "ORF_INTACT";
 		}
@@ -624,11 +636,11 @@ for my $key (keys %chrom_trans)
 			#$to_ins{"$key\:$ins[$j]"}=~/^(\d+)\-(\S+)$/;
 			if($mod_pep_status eq 'ORF_PRESERVED')
 			{
-				$ins2gvf_variant{"$ins[$j]\_\_inframe\_variant"}.=$transcripts[$i] . "\,";
+				$ins2gvf_variant{"$ins[$j]\_\_inframe\_variant"}.=$transcript . "\,";
 			}
 			else
 			{
-				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcripts[$i] . "\,";
+				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
 			}
 		}
 
@@ -636,19 +648,19 @@ for my $key (keys %chrom_trans)
         {
        		if($mod_pep_status eq 'ORF_PRESERVED')
             {
-            	$del2gvf_variant{"$dels[$j]\_\_inframe\_variant"}.=$transcripts[$i] . "\,";
+            	$del2gvf_variant{"$dels[$j]\_\_inframe\_variant"}.=$transcript . "\,";
             }
             else
             { 
-            	$del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcripts[$i] . "\,";
+            	$del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
             }
         }
 
 		# 2012-06-19 | CF | ORFs impacted by splice site variants are considered disrupted
 		$mod_pep_status = 'ORF_DISRUPTED'
-			if ($mod_pep_status eq 'ORF_PRESERVED' and $trans2splice{$transcripts[$i]});
+			if ($mod_pep_status eq 'ORF_PRESERVED' and $trans2splice{$transcript});
 
-		$transcript2fate{$transcripts[$i]} =  $mod_pep_status;
+		$transcript2fate{$transcript} =  $mod_pep_status;
 
 		print GENE_SUMMARY "$len_before\t$len_after\t$mod_pep_status\t";
 
@@ -657,13 +669,13 @@ for my $key (keys %chrom_trans)
 		{
 			print GENE_SUMMARY $mod_pep_perc;
 			$dist_disrupted[floor($mod_pep_perc/10)]++;
-			$transcript2fate{$transcripts[$i]}.="\($mod_pep_perc\)";
+			$transcript2fate{$transcript}.="\($mod_pep_perc\)";
 		}
 		$count_orf_status{$mod_pep_status}++;
 
 		print GENE_SUMMARY "\n";
 		$summaries ++;
-        print MOD_PEP "\>$transcripts[$i]\n";
+        print MOD_PEP "\>$transcript\n";
         print MOD_PEP $mod_pep_seq,"\n";
         $mod_peps ++;
 		#print peptide sequence in modified fasta file for proteins
@@ -683,7 +695,7 @@ for my $key (keys %chrom_trans)
 			$end_ins = $1;
 			$seq_ins = $2;
 		}
-		print GVF "$key\tvariant_analyzer\tinsertion\t$start_ins\t$end_ins\t\.\t\+\t\.\t";
+		print GVF "$key\tCooVar\tinsertion\t$start_ins\t$end_ins\t\.\t\+\t\.\t";
 		print GVF "ID\=ins\_$ins_id\;Variant\_seq\=$seq_ins\;Reference\_seq\=\~\;Variant\_type\=$variant;Variant\_effect\=$variant"; # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
 		chop($ins2gvf_variant{$key2});
 		print GVF " 0 mRNA $ins2gvf_variant{$key2}\n";
@@ -698,57 +710,57 @@ for my $key (keys %chrom_trans)
 		$ins_id++;
 	}
 
-	for(my $j=0;$j<@insertions;$j++)
+	for(my $j=0;$chrom_ins{$key} and $j<@{$chrom_ins{$key}};$j++)
 	{
-		next if (defined $seen_ins{$insertions[$j]});
+		next if (defined $seen_ins{$chrom_ins{$key}->[$j]});
 		#then it is a silent mutation
-		$insertions[$j]=~/(\d+)\.\.(\d+)\-(\S+)/;
+		$chrom_ins{$key}->[$j]=~/(\d+)\.\.(\d+)\-(\S+)/;
 
 		my $start_ins = $1;
 		my $end_ins = $2;
 		my $seq_ins = $3;
 
-		print GVF "$key\tvariant_analyzer\tinsertion\t$start_ins\t$end_ins\t\.\t\+\t\.\t";
+		print GVF "$key\tCooVar\tinsertion\t$start_ins\t$end_ins\t\.\t\+\t\.\t";
 		print GVF "ID\=ins\_$ins_id\;Variant\_seq\=$seq_ins\;Reference\_seq\=\~\;Variant\_type\=silent\_mutation;Variant\_effect\=silent\_mutation\n"; # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
 		$ins_id++;
 		$gvfs ++;
 
 	}
 
-        for my $key2 (keys %del2gvf_variant)
-        {
-                $key2=~/(\d+)\.\.(\d+)\_\_(\S+)/;
-                my $start_del =	$1;
+	for my $key2 (keys %del2gvf_variant)
+	{
+		$key2=~/(\d+)\.\.(\d+)\_\_(\S+)/;
+		my $start_del =	$1;
 		my $end_del = $2;
-                my $variant = $3;
+		my $variant = $3;
 
-                print GVF "$key\tvariant_analyzer\tdeletion\t$start_del\t$end_del\t\.\t\+\t\.\t";
-                print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_type\=$variant;Variant\_effect\=$variant";  # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
-                chop($del2gvf_variant{$key2});
-                print GVF " 0 mRNA $del2gvf_variant{$key2}\n";
-				$gvfs ++;
-                my @trans = split(/\,/,$del2gvf_variant{$key2});
-                for(my $j=0;$j<@trans;$j++)
-                {
-                        $trans2del_id{$trans[$j]}.= "del\_$del_id\,";
-                }
-                $del_id++;
-        }
+		print GVF "$key\tCooVar\tdeletion\t$start_del\t$end_del\t\.\t\+\t\.\t";
+		print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_type\=$variant;Variant\_effect\=$variant";  # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
+		chop($del2gvf_variant{$key2});
+		print GVF " 0 mRNA $del2gvf_variant{$key2}\n";
+		$gvfs ++;
+		my @trans = split(/\,/,$del2gvf_variant{$key2});
+		for(my $j=0;$j<@trans;$j++)
+		{
+			$trans2del_id{$trans[$j]}.= "del\_$del_id\,";
+		}
+		$del_id++;
+	}
 
-        for(my $j=0;$j<@deletions;$j++)
-        {
-               	next if (defined $seen_del{$deletions[$j]});
-                #then it is a silent mutation
-                $deletions[$j]=~/(\d+)\.\.(\d+)/;
+	for(my $j=0;$chrom_del{$key} and $j<@{$chrom_del{$key}};$j++)
+	{
+		next if (defined $seen_del{$chrom_del{$key}->[$j]});
+		#then it is a silent mutation
+		$chrom_del{$key}->[$j]=~/(\d+)\.\.(\d+)/;
 
-                my $start_del = $1;
-                my $end_del = $2;
+		my $start_del = $1;
+		my $end_del = $2;
 
-                print GVF "$key\tvariant_analyzer\tdeletion\t$start_del\t$end_del\t\.\t\+\t\.\t";
-                print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_type\=silent\_mutation;Variant\_effect\=silent\_mutation\n"; # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
-                $del_id++;
-				$gvfs ++;
-        }
+		print GVF "$key\tCooVar\tdeletion\t$start_del\t$end_del\t\.\t\+\t\.\t";
+		print GVF "ID\=del\_$del_id\;Variant\_seq\=\-\;Reference\_seq\=\~\;Variant\_type\=silent\_mutation;Variant\_effect\=silent\_mutation\n"; # 2011-11-21 | CF | added variant_type for easier track grouping in Gbrowse
+		$del_id++;
+		$gvfs ++;
+	}
 }
 close(MOD_cDNA);
 close(MOD_PFA);
@@ -758,18 +770,18 @@ close(GVF);
 close(ALIGNMENT);
 
 print "[apply-insertions-deletions.pl] $gvfs lines added to $gvf_gvs\n";
-print "[apply-insertions-deletions.pl] $mod_pfas lines written to $out_dir/VA_Transcripts/variant_cDNA.exons\n";
-print "[apply-insertions-deletions.pl] $mod_cdnas lines written to $out_dir/VA_Transcripts/variant_cDNA.fasta\n";
-print "[apply-insertions-deletions.pl] $mod_peps lines written to $out_dir/VA_Transcripts/variant_peptides.fasta\n";
-print "[apply-insertions-deletions.pl] $summaries lines written to $out_dir/VA_Intermediate_Files/variant.summary\n";
-print "[apply-insertions-deletions.pl] $alignments lines written to $out_dir/VA_Transcripts/reference_variant.alignment\n";
+print "[apply-insertions-deletions.pl] $mod_pfas lines written to $out_dir/CV_Transcripts/variant_cDNA.exons\n";
+print "[apply-insertions-deletions.pl] $mod_cdnas lines written to $out_dir/CV_Transcripts/variant_cDNA.fasta\n";
+print "[apply-insertions-deletions.pl] $mod_peps lines written to $out_dir/CV_Transcripts/variant_peptides.fasta\n";
+print "[apply-insertions-deletions.pl] $summaries lines written to $out_dir/CV_Intermediate_Files/variant.summary\n";
+print "[apply-insertions-deletions.pl] $alignments lines written to $out_dir/CV_Transcripts/reference_variant.alignment\n";
 
-open(FINAL_GFF3,">$out_dir/VA_transcripts.gff3") || die "[apply-insertions-deletions.pl] $!: $out_dir/VA_transcripts.gff3\n";
+open(FINAL_GFF3,">$out_dir/CV_transcripts.gff3") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_transcripts.gff3\n";
 
 while(<TRANS_GFF3>)
 {
         chomp($_);
-        if($_=~/^\#/ || $_=~/\tvariant\_analyzer\tcoding\_exon\t/)
+        if($_=~/^\#/ || $_=~/\tCooVar\tcoding\_exon\t/)
         {
         	print FINAL_GFF3 $_,"\n";
             next;
@@ -835,7 +847,7 @@ for my $key (sort keys %count_overall_impact)
 }
 
 close(STAT);
-print "[apply-insertions-deletions.pl] Variant statistics written to $out_dir/VA_Transcripts/variant.stat\n";
+print "[apply-insertions-deletions.pl] Variant statistics written to $out_dir/CV_Transcripts/variant.stat\n";
 
 print DIST_INS "Length Distribution of All Insertions\n";
 print DIST_INS "-------------------------------------\n";
@@ -880,8 +892,8 @@ for (my $i=0;$i<@dist_del_exons;$i++)
 close(DIST_INS);
 close(DIST_DEL);
 
-print "[apply-insertions-deletions.pl] Insertion distribution written to $out_dir/VA_Insertions/distribution_insertions.out\n";
-print "[apply-insertions-deletions.pl] Deletion distribution written to $out_dir/VA_Deletions/distribution_deletions.out\n";
+print "[apply-insertions-deletions.pl] Insertion distribution written to $out_dir/CV_Insertions/distribution_insertions.out\n";
+print "[apply-insertions-deletions.pl] Deletion distribution written to $out_dir/CV_Deletions/distribution_deletions.out\n";
 
 
 print "[apply-insertions-deletions.pl] Done at ";
