@@ -133,7 +133,7 @@ for my $key (sort keys %chrom)
 	print TYPE "$key\textension\t$chrom{$key}\n";
 }
 print TYPE "\n";
-my %chrom=();
+%chrom=();
 
 for my $key (sort keys %count_non_sense)
 { 
@@ -146,7 +146,7 @@ for my $key (sort keys %chrom)
         print TYPE "$key\tnon_sense\t$chrom{$key}\n";
 }
 print TYPE "\n";
-my %chrom=();
+%chrom=();
 
 for my $key (sort keys %count_mis_sense)
 { 
@@ -159,7 +159,7 @@ for my $key (sort keys %chrom)
         print TYPE "$key\tmis_sense\t$chrom{$key}\n";
 }
 print TYPE "\n";
-my %chrom=();
+%chrom=();
 
 for my $key (sort keys %count_syn)  
 { 
@@ -173,7 +173,7 @@ for my $key (sort keys %chrom)
 }
 
 print TYPE "\n";
-my %chrom=();
+%chrom=();
 
 for my $key (sort keys %count_splice_junction)
 {
@@ -186,7 +186,7 @@ for my $key (sort keys %chrom)
         print TYPE "$key\tsplice_junction\t$chrom{$key}\n";
 }
 print TYPE "\n";
-my %chrom=();
+%chrom=();
 
 for my $key (sort keys %count_intronic_intergenic)
 {
