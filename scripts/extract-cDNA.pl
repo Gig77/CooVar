@@ -25,9 +25,10 @@ sub get_pep
 {
 	my $cdna_seq = shift;
 	my $seqOb = Bio::Seq->new(-seq => $cdna_seq);
-        my @tr3frame = Bio::SeqUtils->translate_3frames($seqOb);
-        my $pepSeq = $tr3frame[0];
-        my $peptide_seq = $pepSeq->seq;
+#	my @tr3frame = Bio::SeqUtils->translate_3frames($seqOb);
+#	my $pepSeq = $tr3frame[0];
+	my $pepSeq = $seqOb->translate;
+	my $peptide_seq = $pepSeq->seq;
 	return $peptide_seq;
 }
 
