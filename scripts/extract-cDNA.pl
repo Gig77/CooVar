@@ -134,9 +134,17 @@ my %exon_contig=();
 my %exon_strand=();
 my %exon_gene=();
 
+# filter input GFF/GTF file for CDS features
 print "[extract-cDNA.pl] Sorting input GFF file $ARGV[0] ...\n";
-system("sort -k 4 -n $ARGV[0] > $out_dir/sorted_gff3.tmp") == 0 
-  or die ("[extract-cDNA.pl] ERROR executing command: sort -k 4 -n $ARGV[0] > $out_dir/sorted_gff3.tmp\n");
+my $cmd = 'grep -iP "\scds\s+\d+\s+\d+"'." $ARGV[0] | sort -k 4 -n > $out_dir/sorted_gff3.tmp";
+print "[extract-cDNA.pl]   Executing command: $cmd\n";
+system($cmd) == 0 
+  or die ("[extract-cDNA.pl] ERROR executing command: $cmd\n");
+
+# make sure CDS features were found
+my $line_count =  `wc -l < $out_dir/sorted_gff3.tmp`;
+die ("[extract-cDNA.pl] ERROR: Could not find coding sequence (CDS) entries in file $ARGV[0]. Please make sure that this files contains features of type 'CDS' (see README).\n")
+	if ($line_count == 0);
 
 #gff3 file is sorted according to start 
 open(D,"$out_dir/sorted_gff3.tmp") || die "[extract-cDNA.pl] $!: $out_dir/sorted_gff3.tmp\n";
