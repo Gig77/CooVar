@@ -472,7 +472,7 @@ open(TMP_GFF3,">$out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp
 while(<I>)
 {
 	chomp($_);
-	if($_=~/^\#/ || $_=~/\tCooVar\tcoding\_exon\t/)
+	if($_=~/^\#/ || $_=~/\tCooVar\tCDS\t/)
 	{
 		print TMP_GFF3 $_,"\n";
 		next;
