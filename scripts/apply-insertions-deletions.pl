@@ -12,38 +12,39 @@ system("date");
 
 sub evaluate_cDNA
 {
-        my $seq = shift;
+	my $seq = shift;
 	my $name = shift;
 	my @result;
 
 	#print STDERR "Checking $name with sequence $seq\n";
 
-        if(length($seq) < 3)
-        {
+	if(length($seq) < 3)
+    {
 		$result[0]="";
 		$result[1]="FULLY_DELETED";
 		$result[2]="N\.A\.";
 		return @result;
-        }
+    }
 
-        my $seqOb = Bio::Seq->new(-seq => $seq);
-        my @tr3frame = Bio::SeqUtils->translate_3frames($seqOb);
-        my $pepSeq = $tr3frame[0];
-        my $peptide_seq = $pepSeq->seq;
+    my $seqOb = Bio::Seq->new(-seq => $seq);
+    my @tr3frame = Bio::SeqUtils->translate_3frames($seqOb);
+    my $pepSeq = $tr3frame[0];
+    my $peptide_seq = $pepSeq->seq;
 
 	$result[0]=$peptide_seq;
 	my $peptide_length = length($peptide_seq);
 
-        if($peptide_seq=~/^(\S*)\*\S+$/)
-        {
+    if($peptide_seq=~/^(\S*)\*\S+$/)
+    {
 		my $pre = $1;
 		my $pre_length = length($1);
 		my $perc = 100*($pre_length+1)/$peptide_length;
+		
 		if($perc=~/(\d+\.\d\d)/)
 		{
 			$perc = $1;
 		}
-                $result[1]= "ORF_DISRUPTED";
+        $result[1]= "ORF_DISRUPTED";
 		$result[2]=$perc;
 	}
 	else
@@ -51,6 +52,7 @@ sub evaluate_cDNA
 		$result[1]="ORF_PRESERVED";
 		$result[2]="N\.A\.";
 	}
+	
 	return @result;
 }
 
@@ -513,7 +515,7 @@ for my $key (keys %chrom_trans)
 	
 	               	if(defined $to_delete{$k})
 	               	{
-		            	$to_consider{$k}="";
+                       	$to_consider{$k}="";  # 2012-10-05 | CF | bugfix; do not consider this base later when reconstructing modified cDNA
 	                    push @ref_alignment,$ref_nts[$k - $exon_end];
 	                  	push @tar_alignment,"\-";
 	               	}
@@ -602,20 +604,18 @@ for my $key (keys %chrom_trans)
 		}
 
 		my $modified_cDNA="";
-        	@exons = reverse(@exons);
-        	for(my $j=0;$j<@exons;$j++)
-        	{
-            	print MOD_PFA $exons[$j],"\n";
-            	$mod_pfas ++;
-                $exons[$j]=~/^\S+\s+(\S*)/;
-				my $aux_seq = $1;
-                print MOD_cDNA $aux_seq;
+      	@exons = reverse(@exons);
+       	for(my $j=0;$j<@exons;$j++)
+       	{
+           	print MOD_PFA $exons[$j],"\n";
+           	$mod_pfas ++;
+            $exons[$j]=~/^\S+\s+(\S*)/;
+			my $aux_seq = $1;
+            print MOD_cDNA $aux_seq;
 			$modified_cDNA.=$aux_seq;
-        	}
-        	print MOD_cDNA "\n";
-        	$mod_cdnas ++;
+      	}
+       	$mod_cdnas ++;
         	
-
 		$len_after = length($modified_cDNA);
 
 		my @assessed_pep = evaluate_cDNA($modified_cDNA,$transcript);
@@ -633,27 +633,48 @@ for my $key (keys %chrom_trans)
 
 		for(my $j=0;$j<@ins;$j++)
 		{
-			#$to_ins{"$key\:$ins[$j]"}=~/^(\d+)\-(\S+)$/;
-			if($mod_pep_status eq 'ORF_PRESERVED')
+			# 2012-10-05 | CF | classify insertion into frameshift or inframe based on length, not based on ORF status; the ORF status remains unchanged though
+			$to_ins{"$key\:$ins[$j]"}=~/^(\d+)\-(\S+)$/;
+			my $len = length($2);
+			if ($len % 3 == 0)
 			{
 				$ins2gvf_variant{"$ins[$j]\_\_inframe\_variant"}.=$transcript . "\,";
 			}
 			else
 			{
-				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
+				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcript . "\,";				
 			}
+#			if($mod_pep_status eq 'ORF_PRESERVED')
+#			{
+#				$ins2gvf_variant{"$ins[$j]\_\_inframe\_variant"}.=$transcript . "\,";
+#			}
+#			else
+#			{
+#				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
+#			}
 		}
 
         for(my $j=0;$j<@dels;$j++)
         {
-       		if($mod_pep_status eq 'ORF_PRESERVED')
-            {
+			# 2012-10-05 | CF | classify deletion into frameshift or inframe based on length, not based on ORF status; the ORF status remains unchanged though
+        	my ($start_del, $end_del) = $dels[$j]=~/(\d+)\.\.(\d+)/;
+        	my $len = abs($end_del-$start_del)+1;
+			if ($len % 3 == 0)
+			{
             	$del2gvf_variant{"$dels[$j]\_\_inframe\_variant"}.=$transcript . "\,";
-            }
-            else
-            { 
+			}
+			else
+			{
             	$del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
-            }
+			}
+#       		if($mod_pep_status eq 'ORF_PRESERVED')
+#            {
+#            	$del2gvf_variant{"$dels[$j]\_\_inframe\_variant"}.=$transcript . "\,";
+#            }
+#            else
+#            { 
+#            	$del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
+#            }
         }
 
 		# 2012-06-19 | CF | ORFs impacted by splice site variants are considered disrupted
@@ -781,7 +802,7 @@ open(FINAL_GFF3,">$out_dir/CV_transcripts.gff3") || die "[apply-insertions-delet
 while(<TRANS_GFF3>)
 {
         chomp($_);
-        if($_=~/^\#/ || $_=~/\tCooVar\tcoding\_exon\t/)
+        if($_=~/^\#/ || $_=~/\tCooVar\tCDS\t/)
         {
         	print FINAL_GFF3 $_,"\n";
             next;
