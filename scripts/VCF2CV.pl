@@ -46,7 +46,7 @@ while(<VCF>)
 	#SNP shown in an indel manner
 	elsif($len_ref == $len_tar && $len_ref > 1)
 	{
-		print "[VCF2CV.pl] WARNING: Check $chrom\t$start\n";
+		print "[VCF2CV.pl] WARNING: Potentially problematic VCF entry: $_\n";
 		$ref=~/^\S(\S+)$/;
 		my $original = $1;
 		$tar=~/^\S(\S+)$/;
