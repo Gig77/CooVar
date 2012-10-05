@@ -42,7 +42,8 @@ sub get_cDNA
 		my @exons=split(/\-/,$line[$i]);
 
 #               my $dna = substr $seq, $exons[0]-1, abs ($exons[1] - $exons[0]+1);
-				my $dna = $db->seq($chr, $exons[0] => $exons[1]);
+				my $dna = $db->seq($chr, $exons[0] => $exons[1])
+					or die ("[extract-cDNA.pl] Could not determine sequence for $chr:$exons[0]-$exons[1]\n");
 
                 if($i==0)
                 {
@@ -72,7 +73,9 @@ sub get_cDNA
                         if($i>0)
                         {
 #                               my $sj_seq = substr $seq, $exons[0]-3 , 2;
-								my $sj_seq = $db->seq($chr, $exons[0]-2, $exons[0]-1);
+								my $sj_seq = $db->seq($chr, $exons[0]-2, $exons[0]-1)
+									or die ("[extract-cDNA.pl] Could not determine sequence for $chr:".($exons[0]-2)."-".($exons[0]-1)."\n");
+								
 				my $label="";
                                 if($strand eq '-')
                                 {
@@ -93,7 +96,8 @@ sub get_cDNA
 			if($i<scalar(@line) - 1)
 			{
 #				my $sj_seq = substr $seq, $exons[1], 2;
-				my $sj_seq = $db->seq($chr, $exons[1]+1, $exons[1]+2);
+				my $sj_seq = $db->seq($chr, $exons[1]+1, $exons[1]+2)
+					or die ("[extract-cDNA.pl] Could not determine sequence for $chr:".($exons[1]+1)."-".($exons[1]+2)."\n");
 				my $label = "";
 				if($strand eq '-')
 				{
