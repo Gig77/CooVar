@@ -4,6 +4,7 @@ use strict;
 use Getopt::Long;
 use File::Basename;
 use Cwd;
+use Bio::DB::Fasta;
 
 my $exon_file;
 my $dna_file;
@@ -75,6 +76,26 @@ die "[coovar.pl] ERROR: GVS_VCF_FORMAT file $vcf_file not found.\n" unless (!$vc
 execute("mkdir $out_dir") unless (-d $out_dir);
 execute("mkdir $out_dir/CV_Intermediate_Files") unless (-d "$out_dir/CV_Intermediate_Files");
 
+# index reference FASTA
+print "[coovar.pl] Indexing FASTA file $dna_file on ";
+system("date");
+my $db = Bio::DB::Fasta->new($dna_file);
+die ("[coovar.pl]   ERROR: Could not index FASTA file. Do you have write permissions to the directory containing the FASTA file?\n")
+	if (!$db or !-e "$dna_file.index");
+print "[coovar.pl]   Done indexing FASTA file on ";
+system("date");
+
+print "[coovar.pl] Extracting contig information from FASTA on ";
+system("date");
+open(CHR, ">$out_dir/CV_Intermediate_Files/contigs.summary")
+	or die("[coovar.pl]   ERROR: Could not write contig information to file $out_dir/CV_Intermediate_Files/contigs.summary\n");
+my $stream = $db->get_PrimarySeq_stream();
+while(my $seq = $stream->next_seq())
+{
+	print CHR $seq->id."\t".$seq->length."\n";
+}
+close(CHR);
+
 print "[coovar.pl] Parsing GV files on ";
 system("date");
 
@@ -136,6 +157,9 @@ if($circos == 1)
 	system("date");
 	execute("perl $prog_dir/scripts/parse2circos.pl $snp_file $ins_file $del_file $exon_file $dna_file $out_dir"); 
 }
+
+print "[coovar.pl] Categorized GVs can be found in $out_dir/CV_categorized_GVs.gvf\n";
+print "[coovar.pl] Categorized transcripts can be found in $out_dir/CV_transcripts.gff3\n";
 
 print "[coovar.pl] Done at ";
 system("date");

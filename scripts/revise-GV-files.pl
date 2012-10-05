@@ -8,6 +8,20 @@ system("date");
 
 my $out_dir = $ARGV[3];
 
+# reading contig information
+my %contigs;
+print "[revise-GV-files.pl] Reading contig information from $out_dir/CV_Intermediate_Files/contigs.summary on ";
+system("date");
+open(CHR, "$out_dir/CV_Intermediate_Files/contigs.summary")
+	or die("[revise-GV-files.pl]   ERROR: Could not read contig information.\n");
+while(<CHR>)
+{
+	chomp;
+	my ($contig, $len) = split("\t");
+	$contigs{$contig} = $len;
+}
+close(CHR);
+
 open(SNP,$ARGV[0]) || die "[revise-GV-files.pl] $!: $ARGV[0]\n";	
 open(INS,$ARGV[1]) || die "[revise-GV-files.pl] $!: $ARGV[1]\n";
 open(DEL,$ARGV[2]) || die "[revise-GV-files.pl] $!: $ARGV[2]\n";
@@ -30,6 +44,10 @@ my $excluded_del = "$out_dir/CV_Deletions/excluded_" . basename($ARGV[2]);
 open(KEPT_DEL,">$output_del");
 open(EXC_DEL,">$excluded_del");
 
+# revising SNPs
+print "[revise-GV-files.pl] Revising SNPs... on ";
+system("date");
+
 my $kept = 0;
 my $excluded = 0;
 while(<SNP>)
@@ -44,6 +62,16 @@ while(<SNP>)
 		print EXC_SNP $_,"\n";
 		$excluded ++;
 	}
+	elsif (!exists $contigs{$line[0]})
+	{
+		print EXC_SNP $_,"\tinvalid contig name\n";
+		$excluded ++;
+	}
+	elsif ($line[1] > $contigs{$line[0]})
+	{
+		print EXC_SNP $_,"\tposition exceeds contig length\n";
+		$excluded ++;		
+	}
 	else
 	{
 		$_=~s/\s+/\t/g;
@@ -55,9 +83,17 @@ close(SNP);
 close(KEPT_SNP);
 close(EXC_SNP);
 
-print "[revise-GV-files.pl] $kept kept SNPs written to $output_snp\n";
-print "[revise-GV-files.pl] $excluded excluded SNPs written to $excluded_snp\n";
+if ($excluded > 0)
+{
+	print "[revise-GV-files.pl]   **************\n";
+	print "[revise-GV-files.pl]   *** WARNING: $excluded SNPs have been excluded from analysis! Check file $excluded_snp for additional information.\n";
+	print "[revise-GV-files.pl]   **************\n";
+}
+print "[revise-GV-files.pl]   $kept kept SNPs written to $output_snp\n";
 
+# revising insertions
+print "[revise-GV-files.pl] Revising insertions... on ";
+system("date");
 
 $kept = 0;
 $excluded = 0;
@@ -72,6 +108,16 @@ while(<INS>)
             print EXC_INS $_,"\n";
 			$excluded ++;
         }
+		elsif (!exists $contigs{$line[0]})
+		{
+			print EXC_INS $_,"\tinvalid contig name\n";
+			$excluded ++;
+		}
+		elsif ($line[1] > $contigs{$line[0]})
+		{
+			print EXC_INS $_,"\tposition exceeds contig length\n";
+			$excluded ++;		
+		}
         else
         { 
 			$_=~s/\s+/\t/g;
@@ -83,8 +129,17 @@ close(INS);
 close(KEPT_INS);
 close(EXC_INS);
 
-print "[revise-GV-files.pl] $kept kept insertions written to $output_ins\n";
-print "[revise-GV-files.pl] $excluded excluded insertions written to $excluded_ins\n";
+if ($excluded > 0)
+{
+	print "[revise-GV-files.pl]   **************\n";
+	print "[revise-GV-files.pl]   *** WARNING: $excluded insertions have been excluded from analysis! Check file $excluded_ins for additional information.\n";
+	print "[revise-GV-files.pl]   **************\n";
+}
+print "[revise-GV-files.pl]   $kept kept insertions written to $output_ins\n";
+
+# revising deletions
+print "[revise-GV-files.pl] Revising deletions... on ";
+system("date");
 
 $kept = 0;
 $excluded = 0;
@@ -99,6 +154,16 @@ while(<DEL>)
         	print EXC_DEL $_,"\n";
 			$excluded ++;
         }
+		elsif (!exists $contigs{$line[0]})
+		{
+			print EXC_DEL $_,"\tinvalid contig name\n";
+			$excluded ++;
+		}
+		elsif ($line[1] > $contigs{$line[0]})
+		{
+			print EXC_DEL $_,"\tposition exceeds contig length\n";
+			$excluded ++;		
+		}
 		else
 		{
 			$_=~s/\s+/\t/g;
@@ -110,8 +175,13 @@ close(DEL);
 close(KEPT_DEL);
 close(EXC_DEL);
 
-print "[revise-GV-files.pl] $kept kept deletions written to $output_del\n";
-print "[revise-GV-files.pl] $excluded excluded deletions written to $excluded_del\n";
+if ($excluded > 0)
+{
+	print "[revise-GV-files.pl]   **************\n";
+	print "[revise-GV-files.pl]   *** WARNING: $excluded deletions have been excluded from analysis! Check file $excluded_del for additional information.\n";
+	print "[revise-GV-files.pl]   **************\n";
+}
+print "[revise-GV-files.pl]   $kept kept deletions written to $output_del\n";
 
 print "[revise-GV-files.pl] Done at ";
 system("date");

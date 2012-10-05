@@ -10,16 +10,8 @@ system("date");
 
 my $out_dir = $ARGV[2] or die "[extract-cDNA.pl] output directory not specified\n";
 
-print "[extract-cDNA.pl] Indexing FASTA file $ARGV[1] on ";
-system("date");
-
-my $db = Bio::DB::Fasta->new($ARGV[1]);
-
-die ("[extract-cDNA.pl] ERROR: Could not index FASTA file. Do you have write permissions to the directory containing the FASTA file?\n")
-	if (!-e "$ARGV[1].index");
-
-print "[extract-cDNA.pl]   Done indexing FASTA file on ";
-system("date");
+my $db = Bio::DB::Fasta->new($ARGV[1])
+	or die ("[extract-cDNA.pl] ERROR: Could not index/access FASTA file $ARGV[1].");
 
 sub get_pep
 {
