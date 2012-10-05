@@ -247,7 +247,7 @@ for my $chr (sort keys %chrom)
 		
 		for(my $j=0;$j<@line;$j++)
 		{
-			print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tCooVar\tcoding_exon\t";
+			print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tCooVar\tCDS\t";
 			$line[$j]=~/(\d+)\-(\d+)/;
 			my $start_ex = $1;
 			my $end_ex = $2;
