@@ -8,7 +8,7 @@ system("date");
 
 #this script takes as input a VCF file and generates the necessary input files for SNPs, insertions and deletions
 
-print "[VCF2CV.pl] Converting VCF input file to CooVar tab format on \n";
+print "[VCF2CV.pl] Converting VCF input file to CooVar tab format on ";
 system("date");
 
 my $out_dir = $ARGV[1] or die "[VCF2CV.pl] output directory not specified\n";
@@ -35,7 +35,13 @@ while(<VCF>)
 	my $ref = $line[3];
 	my @alt = split(/\,/,$line[4]);
 	my $tar = $alt[0];	#arbitrarily takes the first alternative
-	next if ($tar eq '.');	#monomorphic, no change
+	
+	# ignore monomorphic variants (no change)
+	if ($tar eq '.')
+	{
+		print "[VCF2CV.pl]   WARNING: Ignoring monomorphic variant: $_\n";
+		next;
+	};
 
 	my $len_ref = length($ref);
 	my $len_tar = length($tar);
@@ -57,12 +63,26 @@ while(<VCF>)
 		my @to_original = split(//,$original);
 		my @to_subs = split(//,$subs);
 		my $aux_start = $start+1;
+		
+		if(@to_subs == 0)
+		{
+			print "[VCF2CV.pl]   WARNING: Unrecognized line: $_\n";
+			next;		
+		}
+		
 		for(my $i=0;$i<@to_subs;$i++)
 		{
-			next if ($to_original[$i] eq $to_subs[$i]);	#within the substituted block could be same base pairs
+			# within the substituted block could be same base pairs
+			next if ($to_original[$i] eq $to_subs[$i]);
 			print SNP "$chrom\t$aux_start\t$to_original[$i]\t$to_subs[$i]\n";
 			$aux_start++;
 			$snps ++;			
+		}
+		
+		if ($aux_start == $start + 1)
+		{
+			print "[VCF2CV.pl]   WARNING: Ignoring monomorphic variant: $_\n";
+			next;
 		}
 	}
 	#DEL
