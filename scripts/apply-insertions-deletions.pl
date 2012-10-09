@@ -611,7 +611,7 @@ for my $key (keys %chrom_trans)
            	$mod_pfas ++;
             $exons[$j]=~/^\S+\s+(\S*)/;
 			my $aux_seq = $1;
-            print MOD_cDNA $aux_seq;
+            print MOD_cDNA $aux_seq,"\n"; # 2012-10-07 | CF | add newline character after sequence
 			$modified_cDNA.=$aux_seq;
       	}
        	$mod_cdnas ++;
