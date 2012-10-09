@@ -43,7 +43,7 @@ sub get_cDNA
 
 #               my $dna = substr $seq, $exons[0]-1, abs ($exons[1] - $exons[0]+1);
 				my $dna = $db->seq($chr, $exons[0] => $exons[1])
-					or die ("[extract-cDNA.pl] Could not determine sequence for $chr:$exons[0]-$exons[1]\n");
+					or die ("[extract-cDNA.pl] ERROR: Could not determine sequence for $chr:$exons[0]-$exons[1]\n");
 
                 if($i==0)
                 {
