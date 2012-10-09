@@ -165,6 +165,10 @@ can be found in:
 
 http://www.1000genomes.org/wiki/Analysis/vcf4.0
 
+Note that if multiple alternative alleles are specified for a variant in the VCF file, CooVar will consider only the first
+of these alternative alleles. Please make sure that this is the allele that you want to annotate. Multiple 
+alternative alleles per variant will be supported in a future release of CooVar. 
+
 The VCF is used by a number of programs that detect SNPs and small indels, including the BCF tools that comes with SAMTools for 
 calling SNPs and small indels 
 
