@@ -53,6 +53,7 @@ unless ($exon_file && $dna_file && ($vcf_file || $tab_file))
 }
 
 $out_dir = cwd()."/output_".getTimestamp() if (!$out_dir);
+$out_dir =~ s/\/$//; # remove trailing '/'
 
 my ($prog_dir) = __FILE__ =~ /(.*)\//;
 $prog_dir = "." if (!$prog_dir);
