@@ -8,6 +8,9 @@ system("date");
 
 #this script takes as input a VCF file and generates the necessary input files for SNPs, insertions and deletions
 
+print "[VCF2CV.pl] Converting VCF input file to CooVar tab format on \n";
+system("date");
+
 my $out_dir = $ARGV[1] or die "[VCF2CV.pl] output directory not specified\n";
 open(VCF,$ARGV[0]) || die "$!\n";
 #my $filter_non_pass=$ARGV[1];
@@ -81,7 +84,7 @@ while(<VCF>)
 	}
 	else
 	{
-		print "[VCF2CV.pl] WARNING: Unrecognized line: $_\n";
+		print "[VCF2CV.pl]   WARNING: Unrecognized line: $_\n";
 	}
 }
 close(VCF);
@@ -89,9 +92,9 @@ close(SNP);
 close(INS);
 close(DEL);
 
-print "[VCF2CV.pl] $snps SNPs written to $snp_file...\n";
-print "[VCF2CV.pl] $inss insertions written to $ins_file...\n";
-print "[VCF2CV.pl] $dels deletions written to $del_file...\n";
+print "[VCF2CV.pl]   $snps SNPs written to $snp_file...\n";
+print "[VCF2CV.pl]   $inss insertions written to $ins_file...\n";
+print "[VCF2CV.pl]   $dels deletions written to $del_file...\n";
 
 print "[VCF2CV.pl] Done at ";
 system("date");
