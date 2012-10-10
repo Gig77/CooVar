@@ -15,6 +15,7 @@ my $tab_file;
 my $vcf_file;
 my $out_dir;
 my $circos='';
+my $no_contig_sum = 0;
 
 sub getTimestamp
 {
@@ -42,7 +43,8 @@ GetOptions ("exon|e=s" => \$exon_file,
 		"tab|t=s"  => \$tab_file,
 		"vcf|v=s"  => \$vcf_file,
 		"out|o=s"  => \$out_dir,
-		"circos"   => \$circos
+		"circos"   => \$circos,
+		"no_contig_sum" => \$no_contig_sum  # undocumented parameter for test purposes
 		);	
 
 unless ($exon_file && $dna_file && ($vcf_file || $tab_file))
@@ -86,16 +88,19 @@ die ("[coovar.pl]   ERROR: Could not index FASTA file. Do you have write permiss
 print "[coovar.pl]   Done indexing FASTA file on ";
 system("date");
 
-print "[coovar.pl] Extracting contig information from FASTA on ";
-system("date");
-open(CHR, ">$out_dir/CV_Intermediate_Files/contigs.summary")
-	or die("[coovar.pl]   ERROR: Could not write contig information to file $out_dir/CV_Intermediate_Files/contigs.summary\n");
-my $stream = $db->get_PrimarySeq_stream();
-while(my $seq = $stream->next_seq())
+if (!$no_contig_sum)
 {
-	print CHR $seq->id."\t".$seq->length."\n";
+	print "[coovar.pl] Extracting contig information from FASTA on ";
+	system("date");
+	open(CHR, ">$out_dir/CV_Intermediate_Files/contigs.summary")
+		or die("[coovar.pl]   ERROR: Could not write contig information to file $out_dir/CV_Intermediate_Files/contigs.summary\n");
+	my $stream = $db->get_PrimarySeq_stream();
+	while(my $seq = $stream->next_seq())
+	{
+		print CHR $seq->id."\t".$seq->length."\n";
+	}
+	close(CHR);	
 }
-close(CHR);
 
 print "[coovar.pl] Parsing GV files on ";
 system("date");
