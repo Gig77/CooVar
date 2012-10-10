@@ -209,7 +209,7 @@ system("rm $out_dir/sorted_gff3.tmp");
 # 2012-10-09 | CF | extend transcript coordinate by three if last CDS is not a stop codon
 # 2012-10-09 | CF | adjust for phase of first exon to ensure correct translation
 print "[extract-cDNA.pl] Ensuring inclusion of terminal stop codons and adjusting for phase of initial exons\n";
-my $adjusted_phase = 0;
+my ($adjusted_phase, $adjusted_stop) = (0, 0);
 foreach my $k (keys(%exon))
 {
 	my @exons = split("\t", $exon{$k});
@@ -228,11 +228,12 @@ foreach my $k (keys(%exon))
 		my ($start, $end) = split("-", $last);
 		die "[extract-cDNA.pl] ERROR: Could not parse exon coordinates for transcript $k: $last\n"
 			if (!$start or !$end);
-		my $stop_cds = $db->seq($exon_contig{$k}, $end-2 => $end);
-		if ($stop_cds !~ /(tag|taa|tga)/)
+		my $stop_cds = $db->seq($exon_contig{$k}, $end-2 => $end+3);
+		if ($stop_cds !~ /(tag|taa|tga).../i and $stop_cds =~ /...(tag|taa|tga)/i)
 		{
 			$exons[@exons-1] = "$start-".($end+3); # extend by 3 to include stop
 			$exon{$k} = join("\t", @exons);
+			$adjusted_stop ++;
 		}
 		if ($phases[0] == 1 || $phases[0] == 2)
 		{
@@ -250,12 +251,13 @@ foreach my $k (keys(%exon))
 		my ($start, $end) = split("-", $last);
 		die "[extract-cDNA.pl] ERROR: Could not parse exon coordinates for transcript $k: $last\n"
 			if (!$start or !$end);
-		my $stop_cds = reverse($db->seq($exon_contig{$k}, $start, $start+2));
+		my $stop_cds = reverse($db->seq($exon_contig{$k}, $start-3, $start+2));
         $stop_cds=~tr/[ACTGactg]/[TGACtgac]/;
-		if ($stop_cds !~ /(tag|taa|tga)/)
+		if ($stop_cds !~ /(tag|taa|tga).../i and $stop_cds =~ /...(tag|taa|tga)/i)
 		{
 			$exons[0] = ($start-3)."-$end"; # extend by 3 to include stop
 			$exon{$k} = join("\t", @exons);
+			$adjusted_stop ++;
 		}
 		if ($phases[@phases-1] == 1 || $phases[@phases-1] == 2)
 		{
@@ -271,6 +273,8 @@ foreach my $k (keys(%exon))
 
 print "[extract-cDNA.pl]   Coordinates of $adjusted_phase transcripts were phase-adjusted to ensure their proper translation\n"
 	if ($adjusted_phase > 0);
+print "[extract-cDNA.pl]   Coordinates of $adjusted_stop transcripts were adjusted to include terminal stop codons\n"
+	if ($adjusted_stop > 0);
 
 open(ORI_CDNA,">$out_dir/CV_Transcripts/reference_cDNA.fasta") || die "[extract-cDNA.pl] $!: $out_dir/CV_Transcripts/reference_cDNA.fasta\n";;
 open(ORI_PEP,">$out_dir/CV_Transcripts/reference_peptides.fasta") || die "[extract-cDNA.pl] $!: $out_dir/CV_Transcripts/reference_peptides.fasta\n";;
