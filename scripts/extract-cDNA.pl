@@ -10,6 +10,7 @@ system("date");
 
 my $out_dir = $ARGV[2] or die "[extract-cDNA.pl] output directory not specified\n";
 
+#my %invalidate_first_codon;
 my $db = Bio::DB::Fasta->new($ARGV[1])
 	or die ("[extract-cDNA.pl] ERROR: Could not index/access FASTA file $ARGV[1].");
 
@@ -56,11 +57,13 @@ sub get_cDNA
 
                 if($strand eq '+')
                 {
+ #               	$dna =~ s/^.../NNN/ if ($invalidate_first_codon{$line[$i]});
                 	$cdna_seq.= $dna;
-			$pseudo_fasta.="\(" . $line[$i] . "\)\ " .  $dna . "\n";
+					$pseudo_fasta.="\(" . $line[$i] . "\)\ " .  $dna . "\n";
                 }
                 else
                 {
+#                	$dna =~ s/...$/NNN/ if ($invalidate_first_codon{$line[$i]});
                 	$dna = reverse($dna);
                         $dna=~tr/[ACTGactg]/[TGACtgac]/;
                         $cdna_seq= $dna . $cdna_seq;
@@ -129,6 +132,7 @@ my %exon=();
 my %exon_contig=();
 my %exon_strand=();
 my %exon_gene=();
+my %exon_phase=();
 
 # filter input GFF/GTF file for CDS features
 print "[extract-cDNA.pl] Sorting input GFF file $ARGV[0] ...\n";
@@ -185,10 +189,10 @@ while(<D>)
 		$start = $line[4];
 		$end = $line[3];
 	}
-
 	$exon{$id}=$exon{$id} . $start . '-' . $end . "\t";
 	$exon_contig{$id}=$line[0];
 	$exon_strand{$id}=$line[6];
+	$exon_phase{$id}=$exon_phase{$id} . $line[7] . "\t";
 	
 	# remember exon/gene association (if specified)
 	my ($geneid) = $line[8] =~ /gene=([^;]+)/i;
@@ -201,6 +205,72 @@ while(<D>)
 }
 close(D);
 system("rm $out_dir/sorted_gff3.tmp");
+
+# 2012-10-09 | CF | extend transcript coordinate by three if last CDS is not a stop codon
+# 2012-10-09 | CF | adjust for phase of first exon to ensure correct translation
+print "[extract-cDNA.pl] Ensuring inclusion of terminal stop codons and adjusting for phase of initial exons\n";
+my $adjusted_phase = 0;
+foreach my $k (keys(%exon))
+{
+	my @exons = split("\t", $exon{$k});
+	my @phases = split("\t", $exon_phase{$k});
+	
+	die "[extract-cDNA.pl] ERROR: Could not parse exons for transcript $k\n"
+		if (@exons == 0);
+	
+	my $strand = $exon_strand{$k}; 
+	die "[extract-cDNA.pl] ERROR: Could not parse strand for transcript $k\n"
+		if ($strand ne '+' and $strand ne '-');
+		
+	if ($exon_strand{$k} eq '+')
+	{
+		my $last = $exons[@exons-1];
+		my ($start, $end) = split("-", $last);
+		die "[extract-cDNA.pl] ERROR: Could not parse exon coordinates for transcript $k: $last\n"
+			if (!$start or !$end);
+		my $stop_cds = $db->seq($exon_contig{$k}, $end-2 => $end);
+		if ($stop_cds !~ /(tag|taa|tga)/)
+		{
+			$exons[@exons-1] = "$start-".($end+3); # extend by 3 to include stop
+			$exon{$k} = join("\t", @exons);
+		}
+		if ($phases[0] == 1 || $phases[0] == 2)
+		{
+#			print "Adjusting for phase for $k (+)...\n";
+			($start, $end) = split("-", $exons[0]);
+			$exons[0] = ($start-(3-$phases[0]))."-$end";
+			$exon{$k} = join("\t", @exons);
+#			$invalidate_first_codon{$exons[0]} = 1;
+			$adjusted_phase ++;
+		}
+	}
+	else
+	{
+		my $last = $exons[0];
+		my ($start, $end) = split("-", $last);
+		die "[extract-cDNA.pl] ERROR: Could not parse exon coordinates for transcript $k: $last\n"
+			if (!$start or !$end);
+		my $stop_cds = reverse($db->seq($exon_contig{$k}, $start, $start+2));
+        $stop_cds=~tr/[ACTGactg]/[TGACtgac]/;
+		if ($stop_cds !~ /(tag|taa|tga)/)
+		{
+			$exons[0] = ($start-3)."-$end"; # extend by 3 to include stop
+			$exon{$k} = join("\t", @exons);
+		}
+		if ($phases[@phases-1] == 1 || $phases[@phases-1] == 2)
+		{
+#			print "Adjusting for phase for $k (-)...\n";
+			($start, $end) = split("-", $exons[@exons-1]);
+			$exons[@exons-1] = "$start-".($end+(3-$phases[@phases-1]));
+			$exon{$k} = join("\t", @exons);
+#			$invalidate_first_codon{$exons[@exons-1]} = 1;
+			$adjusted_phase ++;
+		}
+	}
+}
+
+print "[extract-cDNA.pl]   Coordinates of $adjusted_phase transcripts were phase-adjusted to ensure their proper translation\n"
+	if ($adjusted_phase > 0);
 
 open(ORI_CDNA,">$out_dir/CV_Transcripts/reference_cDNA.fasta") || die "[extract-cDNA.pl] $!: $out_dir/CV_Transcripts/reference_cDNA.fasta\n";;
 open(ORI_PEP,">$out_dir/CV_Transcripts/reference_peptides.fasta") || die "[extract-cDNA.pl] $!: $out_dir/CV_Transcripts/reference_peptides.fasta\n";;
