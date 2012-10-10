@@ -66,6 +66,7 @@ system("date");
 print "[coovar.pl] Program directory: $prog_dir\n";
 print "[coovar.pl] Command line: ".__FILE__." $params\n";
 print "[coovar.pl]   REFERENCE: $dna_file\n";
+print "[coovar.pl]   CODING EXONS: $exon_file\n";
 print "[coovar.pl]   GVS_TAB_FORMAT: $tab_file\n";
 print "[coovar.pl]   GVS_VCF_FORMAT: $vcf_file\n";
 print "[coovar.pl]   OUTPUT DIRECTORY: $out_dir\n";
