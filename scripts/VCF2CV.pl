@@ -55,31 +55,24 @@ while(<VCF>)
 	#SNP shown in an indel manner
 	elsif($len_ref == $len_tar && $len_ref > 1)
 	{
-		#print "[VCF2CV.pl] WARNING: Potentially problematic VCF entry: $_\n";
-		$ref=~/^\S(\S+)$/;
-		my $original = $1;
-		$tar=~/^\S(\S+)$/;
-		my $subs = $1;
-		my @to_original = split(//,$original);
-		my @to_subs = split(//,$subs);
-		my $aux_start = $start+1;
+		# 2012-10-09 | CF | bugfix: do not ignore first character
+		my @to_original = split(//,$ref);
+		my @to_subs = split(//,$tar);
+		my $aux_start = $start;
 		
-		if(@to_subs == 0)
-		{
-			print "[VCF2CV.pl]   WARNING: Unrecognized line: $_\n";
-			next;		
-		}
-		
+		my $snps_before = $snps;
 		for(my $i=0;$i<@to_subs;$i++)
 		{
 			# within the substituted block could be same base pairs
-			next if ($to_original[$i] eq $to_subs[$i]);
-			print SNP "$chrom\t$aux_start\t$to_original[$i]\t$to_subs[$i]\n";
+			if ($to_original[$i] ne $to_subs[$i])
+			{
+				print SNP "$chrom\t$aux_start\t$to_original[$i]\t$to_subs[$i]\n";
+				$snps ++;							
+			}
 			$aux_start++;
-			$snps ++;			
 		}
 		
-		if ($aux_start == $start + 1)
+		if ($snps_before == $snps)
 		{
 			print "[VCF2CV.pl]   WARNING: Ignoring monomorphic variant: $_\n";
 			next;
