@@ -382,6 +382,7 @@ close(FREQ);
 print "[categorize-SNPs.pl] $freqs lines written to $ARGV[6]\n";
 
 #find SNPs that impact splice junctions
+print "[categorize-SNPs.pl] Determining SNPs impacting splice junctions\n";
 for my $key (keys %all_snps)
 {
 	#next if (defined $seen_snps{$key});
