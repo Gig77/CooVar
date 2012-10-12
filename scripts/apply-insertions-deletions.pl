@@ -34,7 +34,7 @@ sub evaluate_cDNA
 	$result[0]=$peptide_seq;
 	my $peptide_length = length($peptide_seq);
 
-    if($peptide_seq=~/^(\S*)\*\S+$/)
+    if($peptide_seq=~/^([^\*]*)\*\S+$/) # internal stop codon in variant peptide sequence?
     {
 		my $pre = $1;
 		my $pre_length = length($1);
