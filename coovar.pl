@@ -89,7 +89,7 @@ die ("[coovar.pl]   ERROR: Could not index FASTA file. Do you have write permiss
 print "[coovar.pl]   Done indexing FASTA file on ";
 system("date");
 
-if (!$no_contig_sum)
+if (!$no_contig_sum or !-e "$out_dir/CV_Intermediate_Files/contigs.summary")
 {
 	print "[coovar.pl] Extracting contig information from FASTA on ";
 	system("date");
@@ -156,7 +156,7 @@ execute("perl $prog_dir/scripts/get-stats-SNPs.pl $out_dir/CV_Intermediate_Files
 
 print "[coovar.pl] Analyzing insertions and deletions on ";
 system("date");
-execute("perl $prog_dir/scripts/apply-insertions-deletions.pl $out_dir/CV_Transcripts/reference_cDNA.exons $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.exons $out_dir/CV_Intermediate_Files/categorized_snp_coords.list $ins_file $del_file $out_dir/CV_categorized_GVs.gvf $out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp $out_dir");
+execute("perl $prog_dir/scripts/apply-insertions-deletions.pl $out_dir/CV_Transcripts/reference_cDNA.exons $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.exons $out_dir/CV_Intermediate_Files/categorized_snp_coords.list $ins_file $del_file $out_dir/CV_categorized_GVs.gvf $out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp $out_dir/CV_Intermediate_Files/splice_junctions.tmp $out_dir");
 
 if($circos == 1)
 {

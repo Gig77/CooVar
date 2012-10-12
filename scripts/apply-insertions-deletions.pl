@@ -127,13 +127,15 @@ my $insertion_list = $ARGV[3];
 my $deletion_list = $ARGV[4];
 my $gvf_gvs = $ARGV[5];
 my $trans_gff3 = $ARGV[6];
-my $out_dir = $ARGV[7] or die "[apply-insertions-deletions.pl] output directory not specified\n";
+my $sj_file = $ARGV[7];
+my $out_dir = $ARGV[8] or die "[apply-insertions-deletions.pl] output directory not specified\n";
 
 open(cDNA_ref,$ref_pseudo_fasta) || die "[apply-insertions-deletions.pl] $!: $ref_pseudo_fasta\n";
 open(cDNA_SNP,$pseudo_fasta) || die "[apply-insertions-deletions.pl] $!: $pseudo_fasta\n";
 open(SNP,$categorized_snps) || die "[apply-insertions-deletions.pl] $!: $categorized_snps\n";
 open(INS,$insertion_list) || die "[apply-insertions-deletions.pl] $!: $insertion_list\n";
 open(DEL,$deletion_list) || die "[apply-insertions-deletions.pl] $!: $deletion_list\n";
+open(SJ,$sj_file) || die "[apply-insertions-deletions.pl] $!: $sj_file\n";
 open(GVF,">>$gvf_gvs") || die "[apply-insertions-deletions.pl] $!: $gvf_gvs\n";
 open(TRANS_GFF3,$trans_gff3) || die "[apply-insertions-deletions.pl] $!: $trans_gff3\n";
 
@@ -158,6 +160,16 @@ while(<cDNA_ref>)
         }
 }
 close(cDNA_ref);
+
+print "[apply-insertions-deletions.pl] Reading splice junctions from file $sj_file ...\n";
+my %sj=();
+while(<SJ>)
+{
+	chomp($_);
+	my @line = split(/\t/,$_);
+	$sj{$line[0]} .= $line[1] . "\;$line[2]\;$line[4] ";
+}
+close(SJ);
 
 
 my %trans_exons= ();
@@ -388,8 +400,9 @@ for my $key (keys %chrom_trans)
 
 		for (my $j=0;$j<@ins;$j++)
 		{
+#			print "BLA: $key\:$ins[$j]\n";
 			my $aux_coord = "$key\:$ins[$j]";
-			$seen_ins{"$ins[$j]\.\.$to_ins{$aux_coord}"}++;
+			$seen_ins{$aux_coord}++;
 			$trans2ins{$transcript}=1;
 			my $end_ins;
 			if($trans_strand{$transcript} eq '-')
@@ -423,7 +436,7 @@ for my $key (keys %chrom_trans)
 			my $start_del = $1;
 			my $end_del = $2;
 
-			$seen_del{"$start_del\.\.$end_del"}++;
+			$seen_del{"$key:$start_del\.\.$end_del"}++;
 
 			for(my $k=$start_del;$k<=$end_del;$k++)
 			{
@@ -632,8 +645,88 @@ for my $key (keys %chrom_trans)
 			$mod_pep_status = "ORF_INTACT";
 		}
 
+		# 2012-10-11 | CF | determine indels impacting splice junctions
+		my (%sj_dels, %sj_ins);
+		if (exists $sj{$transcript})
+		{
+			my @tsjs = split(" ", $sj{$transcript});
+			my ($junctions_acc, $junctions_don) = ("", "");
+			foreach my $tsj (@tsjs)
+			{
+				my @f = split(";", $tsj);
+				my ($chr, $start, $end) = $f[0] =~ /([^:]+):(\d+)..(\d+)/;
+				if ($f[2] eq 'donor')
+				{
+					$junctions_don .= "($start-$end) \n";
+				}
+				elsif ($f[2] eq 'acceptor')
+				{
+					$junctions_acc .= "($start-$end) \n";
+				}
+				else
+				{
+					die "[apply-insertions-deletions.pl] ERROR: unknown splice site type: $tsj\n";
+				}
+			}
+#			print "DONORS: $junctions_don\n";
+#			print "ACCEPTORS: $junctions_acc\n";
+			
+			# insertions impacting splice acceptor sites
+			{
+				my $ods = get_overlap_ins($key, $junctions_acc);
+				foreach my $od (split(/\s+/,$ods))
+				{
+					print "INS HIT ACCEPTOR: $key:$od\n";
+					$ins2gvf_variant{"$od\_\_splice\_acceptor\_variant"} .= $transcript . "\,";
+					$seen_ins{"$key:$od"} = 1;
+					$sj_ins{"$key:$od"} = 1;
+					$trans2splice{$transcript} = 1;
+				}				
+			}
+			# insertions impacting splice donor sites
+			{
+				my $ods = get_overlap_ins($key, $junctions_don);
+				foreach my $od (split(/\s+/,$ods))
+				{
+					print "INS HIT DONOR: $key:$od\n";
+					$ins2gvf_variant{"$od\_\_splice\_donor\_variant"} .= $transcript . "\,";
+					$seen_ins{"$key:$od"} = 1;
+					$sj_ins{"$key:$od"} = 1;
+					$trans2splice{$transcript} = 1;
+				}				
+			}
+			# deletions impacting splice acceptor sites
+			{
+				my $ods = get_overlap_del($key, $junctions_acc);
+				foreach my $od (split(/\s+/,$ods))
+				{
+					print "DEL HIT ACCEPTOR: $key:$od\n";
+					$del2gvf_variant{"$od\_\_splice\_acceptor\_variant"} .= $transcript . "\,";
+					$seen_del{"$key:$od"} = 1;
+					$sj_dels{"$key:$od"} = 1;
+					$trans2splice{$transcript} = 1;
+				}				
+			}
+			# deletions impacting splice donor sites
+			{
+				my $ods = get_overlap_del($key, $junctions_don);
+				foreach my $od (split(/\s+/,$ods))
+				{
+					print "DEL HIT DONOR: $key:$od\n";
+					$del2gvf_variant{"$od\_\_splice\_donor\_variant"} .= $transcript . "\,";
+					$seen_del{"$key:$od"} = 1;
+					$sj_dels{"$key:$od"} = 1;
+					$trans2splice{$transcript} = 1;
+				}
+				
+			}
+		}
+		
 		for(my $j=0;$j<@ins;$j++)
 		{
+        	# 2012-10-11 | CF | skip insertions already classified as splice junction variants
+        	next if (exists $sj_ins{"$key:$ins[$j]"});
+
 			# 2012-10-05 | CF | classify insertion into frameshift or inframe based on length, not based on ORF status; the ORF status remains unchanged though
 			$to_ins{"$key\:$ins[$j]"}=~/^(\d+)\-(\S+)$/;
 			my $len = length($2);
@@ -645,18 +738,13 @@ for my $key (keys %chrom_trans)
 			{
 				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcript . "\,";				
 			}
-#			if($mod_pep_status eq 'ORF_PRESERVED')
-#			{
-#				$ins2gvf_variant{"$ins[$j]\_\_inframe\_variant"}.=$transcript . "\,";
-#			}
-#			else
-#			{
-#				$ins2gvf_variant{"$ins[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
-#			}
 		}
 
         for(my $j=0;$j<@dels;$j++)
         {
+        	# 2012-10-11 | CF | skip deletions already classified as splice junction variants
+        	next if (exists $sj_dels{"$key:$dels[$j]"});
+        	
 			# 2012-10-05 | CF | classify deletion into frameshift or inframe based on length, not based on ORF status; the ORF status remains unchanged though
         	my ($start_del, $end_del) = $dels[$j]=~/(\d+)\.\.(\d+)/;
         	my $len = abs($end_del-$start_del)+1;
@@ -668,14 +756,6 @@ for my $key (keys %chrom_trans)
 			{
             	$del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
 			}
-#       		if($mod_pep_status eq 'ORF_PRESERVED')
-#            {
-#            	$del2gvf_variant{"$dels[$j]\_\_inframe\_variant"}.=$transcript . "\,";
-#            }
-#            else
-#            { 
-#            	$del2gvf_variant{"$dels[$j]\_\_frameshift\_variant"}.=$transcript . "\,";
-#            }
         }
 
 		# 2012-06-19 | CF | ORFs impacted by splice site variants are considered disrupted
@@ -734,7 +814,10 @@ for my $key (keys %chrom_trans)
 
 	for(my $j=0;$chrom_ins{$key} and $j<@{$chrom_ins{$key}};$j++)
 	{
-		next if (defined $seen_ins{$chrom_ins{$key}->[$j]});
+		my $seen_key = "$key:".$chrom_ins{$key}->[$j];
+		$seen_key =~ s/\.\..*//;
+		next if (defined $seen_ins{$seen_key});
+#		print "NOT SEEN: $seen_key\n";
 		#then it is a silent mutation
 		$chrom_ins{$key}->[$j]=~/(\d+)\.\.(\d+)\-(\S+)/;
 
@@ -771,7 +854,7 @@ for my $key (keys %chrom_trans)
 
 	for(my $j=0;$chrom_del{$key} and $j<@{$chrom_del{$key}};$j++)
 	{
-		next if (defined $seen_del{$chrom_del{$key}->[$j]});
+		next if (defined $seen_del{"$key:".$chrom_del{$key}->[$j]});
 		#then it is a silent mutation
 		$chrom_del{$key}->[$j]=~/(\d+)\.\.(\d+)/;
 
