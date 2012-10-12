@@ -8,7 +8,7 @@ system("date");
 
 #this script takes as input a VCF file and generates the necessary input files for SNPs, insertions and deletions
 
-print "[VCF2CV.pl] Converting VCF input file to CooVar tab format on ";
+print "[VCF2CV.pl] Parsing VCF input file on ";
 system("date");
 
 my $out_dir = $ARGV[1] or die "[VCF2CV.pl] output directory not specified\n";
@@ -23,7 +23,7 @@ open(SNP,">$snp_file");
 open(INS,">$ins_file");
 open(DEL,">$del_file");
 
-my ($snps, $inss, $dels) = (0, 0, 0);
+my ($snps, $inss, $dels, $mult_alt) = (0, 0, 0, 0);
 while(<VCF>)
 {
 	chomp($_);
@@ -32,12 +32,21 @@ while(<VCF>)
 	#next if($line[6] eq 'PASS' && $filter_non_pass ne '0');
 	my $chrom = $line[0];
 	my $start = $line[1];
-	my $ref = $line[3];
-	my @alt = split(/\,/,$line[4]);
-	my $tar = $alt[0];	#arbitrarily takes the first alternative
+	my $ref = uc($line[3]);
+
+	my @alt = split(/\,/,$line[4]);	
+	$mult_alt ++ if (@alt > 1);
+	my $tar = uc($alt[0]);
+
+	# sanity check
+	if (!$tar or !$ref)
+	{
+		print "[VCF2CV.pl]   WARNING: Invalid entry: $_\n";
+		next;
+	};
 	
 	# ignore monomorphic variants (no change)
-	if ($tar eq '.')
+	if ($tar eq '.' or $ref eq $tar)
 	{
 		print "[VCF2CV.pl]   WARNING: Ignoring monomorphic variant: $_\n";
 		next;
@@ -46,64 +55,44 @@ while(<VCF>)
 	my $len_ref = length($ref);
 	my $len_tar = length($tar);
 
-	#SNP
-	if($len_ref == 1 && $len_tar == 1)
-	{
-		print SNP "$chrom\t$start\t$ref\t$tar\n";
-		$snps ++;	
-	}
-	#SNP shown in an indel manner
-	elsif($len_ref == $len_tar && $len_ref > 1)
-	{
-		# 2012-10-09 | CF | bugfix: do not ignore first character
-		my @to_original = split(//,$ref);
-		my @to_subs = split(//,$tar);
-		my $aux_start = $start;
+	my ($p, $sr, $st) = (0, $len_ref, $len_tar);
+	while ($p < $len_ref && $p < $len_tar && substr($ref, $p, 1) eq substr($tar, $p, 1)) { $p ++; } # skip matching prefix
+	while ($sr > $p && $st > $p && substr($ref, $sr-1, 1) eq substr($tar, $st-1, 1)) { $sr--, $st--; } # skip matching suffix
 		
-		my $snps_before = $snps;
-		for(my $i=0;$i<@to_subs;$i++)
-		{
-			# within the substituted block could be same base pairs
-			if ($to_original[$i] ne $to_subs[$i])
-			{
-				print SNP "$chrom\t$aux_start\t$to_original[$i]\t$to_subs[$i]\n";
-				$snps ++;							
-			}
-			$aux_start++;
-		}
-		
-		if ($snps_before == $snps)
-		{
-			print "[VCF2CV.pl]   WARNING: Ignoring monomorphic variant: $_\n";
-			next;
-		}
-	}
-	#DEL
-	elsif($len_ref > $len_tar)
+	# SNPs = different bases b/w ref and target
+	while($p < $sr and $p < $st) 
 	{
-		print DEL "$chrom\t" , $start + $len_tar  , "\t" , $start + $len_ref - 1 , "\n";
+		my ($br, $bt) = (substr($ref, $p, 1), substr($tar, $p, 1));
+		if ($br ne $bt)
+		{
+			print SNP "$chrom\t".($start+$p)."\t$br\t$bt\n";
+			$snps ++;											
+		}
+		$p ++;
+	}
+		
+	# deletion = remaining sequence in ref
+	if ($p < $sr)
+	{
+		print DEL "$chrom\t" , $start + $p  , "\t" , $start+$sr-1 , "\n";
 		$dels ++;	
 	}
-	#INS
-	elsif($len_ref < $len_tar)
+		
+	# insertion = remaining sequence in target
+	if ($p < $st)
 	{
-		$ref=~/^(\S)(\S*)$/;
-		my $ref_base = $1;
-		my $ref_rest = $2;
-		$tar=~/^$ref_base(\S+)$ref_rest$/;
-		my $ins = $1;
-		print INS "$chrom\t" , $start  , "\t" ,  $start + 1 , "\t$ins\n";
-		$inss ++;	
-	}
-	else
-	{
-		print "[VCF2CV.pl]   WARNING: Unrecognized line: $_\n";
+		my $ins = substr($tar, $p, $st-$p);
+		print INS "$chrom\t" , $start + $p - 1 , "\t" ,  $start + $p , "\t$ins\n";
+		$inss ++;		
 	}
 }
 close(VCF);
 close(SNP);
 close(INS);
 close(DEL);
+
+print "[VCF2CV.pl]   WARNING: $mult_alt variants had multiple alternative alleles; only first alternative allele will be considered\n"
+	if ($mult_alt > 0);
 
 print "[VCF2CV.pl]   $snps SNPs written to $snp_file...\n";
 print "[VCF2CV.pl]   $inss insertions written to $ins_file...\n";
