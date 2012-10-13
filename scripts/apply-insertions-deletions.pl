@@ -14,6 +14,7 @@ sub evaluate_cDNA
 {
 	my $seq = shift;
 	my $name = shift;
+	my $ref_cDNA = shift;
 	my @result;
 
 	#print STDERR "Checking $name with sequence $seq\n";
@@ -38,8 +39,23 @@ sub evaluate_cDNA
     {
 		my $pre = $1;
 		my $pre_length = length($1);
+	
+#		# 2012-12-12 | CF | check also reference peptide sequence for internal stops
+		my $refSeqOb = Bio::Seq->new(-seq => $ref_cDNA);
+		my $refPepSeq = $refSeqOb->translate->seq;
+#		print "$ref_cDNA\n";
+#		print "$refPepSeq\n";
+		if ($refPepSeq =~ /^([^\*]*)\*\S+$/)
+		{
+			if (length($1) <= $pre_length)
+			{
+				$result[1]="ORF_PRESERVED";
+				$result[2]="N\.A\.";
+				return @result;				
+			}
+		}
+
 		my $perc = 100*($pre_length+1)/$peptide_length;
-		
 		if($perc=~/(\d+\.\d\d)/)
 		{
 			$perc = $1;
@@ -458,6 +474,7 @@ for my $key (keys %chrom_trans)
 		my @ref_ali_exons;
 		my @tar_ali_exons;
 
+		my $ref_cDNA="";
       	for(my $j=0;$j<@exons;$j++)
       	{
             my @ref_alignment;
@@ -469,14 +486,15 @@ for my $key (keys %chrom_trans)
             $exon_start = $2;
             $exon_end = $3;
             $exon_seq = $4;
+            $ref_cDNA = $exon_seq.$ref_cDNA;
 
 			$aux_ref_exons[$j]=~/^\(\d+\-\d+\)\s+(\S+)/;
 			my $ref_exon_seq = $1;
 			my @ref_nts = split(//,$ref_exon_seq);
 			@ref_nts = reverse(@ref_nts);	
 
-			$len_before+=length($exon_seq);
-                
+			$len_before+=length($exon_seq);               
+            
            	my @nucleotides = split(//,$exon_seq);
           	@nucleotides = reverse(@nucleotides);   #since we want to go from 3' to 5'
 
@@ -603,8 +621,7 @@ for my $key (keys %chrom_trans)
 			unshift @ref_ali_exons,$ref_ali_exon;
 			unshift @tar_ali_exons,$tar_ali_exon;
 		}
-
-
+		
 		for (my $j=0;$j<@ref_ali_exons;$j++)
 		{
 			my @ref_segments = split(/\n/,$ref_ali_exons[$j]);
@@ -632,7 +649,7 @@ for my $key (keys %chrom_trans)
         	
 		$len_after = length($modified_cDNA);
 
-		my @assessed_pep = evaluate_cDNA($modified_cDNA,$transcript);
+		my @assessed_pep = evaluate_cDNA($modified_cDNA,$transcript,$ref_cDNA);
 
 		my $mod_pep_seq= $assessed_pep[0];
 		my $mod_pep_status = $assessed_pep[1];
