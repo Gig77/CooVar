@@ -10,11 +10,12 @@ use Set::IntervalTree;
 print "[apply-insertions-deletions.pl] Start executing script on ";
 system("date");
 
+my %ref_cdnas=();
+
 sub evaluate_cDNA
 {
 	my $seq = shift;
 	my $name = shift;
-	my $ref_cDNA = shift;
 	my @result;
 
 	#print STDERR "Checking $name with sequence $seq\n";
@@ -41,10 +42,13 @@ sub evaluate_cDNA
 		my $pre_length = length($1);
 	
 #		# 2012-12-12 | CF | check also reference peptide sequence for internal stops
+		my $ref_cDNA = $ref_cdnas{$name}
+			or die "[apply-insertions-deletions.pl] ERROR: Could not determine reference cDNA for transcript $name\n";
 		my $refSeqOb = Bio::Seq->new(-seq => $ref_cDNA);
 		my $refPepSeq = $refSeqOb->translate->seq;
 #		print "$ref_cDNA\n";
-#		print "$refPepSeq\n";
+#		print "REF: $refPepSeq\n";
+#		print "ALT: $peptide_seq\n";
 		if ($refPepSeq =~ /^([^\*]*)\*\S+$/)
 		{
 			if (length($1) <= $pre_length)
@@ -173,7 +177,9 @@ while(<cDNA_ref>)
 	else
 	{
                 $ref_exons{$ref_id}.=$_ . "\n";
-        }
+                /\s(.*)/;
+                $ref_cdnas{$ref_id} .= $1;
+    }
 }
 close(cDNA_ref);
 
@@ -474,7 +480,6 @@ for my $key (keys %chrom_trans)
 		my @ref_ali_exons;
 		my @tar_ali_exons;
 
-		my $ref_cDNA="";
       	for(my $j=0;$j<@exons;$j++)
       	{
             my @ref_alignment;
@@ -486,7 +491,6 @@ for my $key (keys %chrom_trans)
             $exon_start = $2;
             $exon_end = $3;
             $exon_seq = $4;
-            $ref_cDNA = $exon_seq.$ref_cDNA;
 
 			$aux_ref_exons[$j]=~/^\(\d+\-\d+\)\s+(\S+)/;
 			my $ref_exon_seq = $1;
@@ -649,7 +653,7 @@ for my $key (keys %chrom_trans)
         	
 		$len_after = length($modified_cDNA);
 
-		my @assessed_pep = evaluate_cDNA($modified_cDNA,$transcript,$ref_cDNA);
+		my @assessed_pep = evaluate_cDNA($modified_cDNA,$transcript);
 
 		my $mod_pep_seq= $assessed_pep[0];
 		my $mod_pep_status = $assessed_pep[1];
@@ -693,7 +697,7 @@ for my $key (keys %chrom_trans)
 				my $ods = get_overlap_ins($key, $junctions_acc);
 				foreach my $od (split(/\s+/,$ods))
 				{
-					print "INS HIT ACCEPTOR: $key:$od\n";
+#					print "INS HIT ACCEPTOR: $key:$od\n";
 					$ins2gvf_variant{"$od\_\_splice\_acceptor\_variant"} .= $transcript . "\,";
 					$seen_ins{"$key:$od"} = 1;
 					$sj_ins{"$key:$od"} = 1;
@@ -705,7 +709,7 @@ for my $key (keys %chrom_trans)
 				my $ods = get_overlap_ins($key, $junctions_don);
 				foreach my $od (split(/\s+/,$ods))
 				{
-					print "INS HIT DONOR: $key:$od\n";
+#					print "INS HIT DONOR: $key:$od\n";
 					$ins2gvf_variant{"$od\_\_splice\_donor\_variant"} .= $transcript . "\,";
 					$seen_ins{"$key:$od"} = 1;
 					$sj_ins{"$key:$od"} = 1;
@@ -717,7 +721,7 @@ for my $key (keys %chrom_trans)
 				my $ods = get_overlap_del($key, $junctions_acc);
 				foreach my $od (split(/\s+/,$ods))
 				{
-					print "DEL HIT ACCEPTOR: $key:$od\n";
+#					print "DEL HIT ACCEPTOR: $key:$od\n";
 					$del2gvf_variant{"$od\_\_splice\_acceptor\_variant"} .= $transcript . "\,";
 					$seen_del{"$key:$od"} = 1;
 					$sj_dels{"$key:$od"} = 1;
@@ -729,7 +733,7 @@ for my $key (keys %chrom_trans)
 				my $ods = get_overlap_del($key, $junctions_don);
 				foreach my $od (split(/\s+/,$ods))
 				{
-					print "DEL HIT DONOR: $key:$od\n";
+#					print "DEL HIT DONOR: $key:$od\n";
 					$del2gvf_variant{"$od\_\_splice\_donor\_variant"} .= $transcript . "\,";
 					$seen_del{"$key:$od"} = 1;
 					$sj_dels{"$key:$od"} = 1;
