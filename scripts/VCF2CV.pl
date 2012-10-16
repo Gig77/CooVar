@@ -41,7 +41,7 @@ while(<VCF>)
 	# sanity check
 	if (!$tar or !$ref)
 	{
-		print "[VCF2CV.pl]   WARNING: Invalid entry: $_\n";
+		print "[VCF2CV.pl]   WARNING: Invalid VCF entry: $_\n";
 		next;
 	};
 	
