@@ -2,13 +2,13 @@
 
 #------------------------------------------------------------------------------------------------
 # DESCR: annotate GVs with genomic regions they overlap with
-# INPUT: 1) list of GVs in GVF format (categorized-gvs.gvf output file) 
-#        2) genomic regions in GFF3 format (protein2genome.pl output)  
-# OUTPUT: GVs with annotated regions in GVF format
+# INPUT: 1) list of GVs in GVF format (categorized-gvs.gvf output file, read from STDIN) 
+#        2) genomic regions in GFF3 format (protein2genome.pl output, program parameter)  
+# OUTPUT: GVs with annotated regions in GVF format (written to STDOUT)
 #
 # SYNOPSIS:
 #
-#   ./annotate-regions.pl categorized-gvs.gvf mapped_protein_domains.gff3 categorized-gvs.w_regions.gvf
+#   cat categorized-gvs.gvf | ./annotate-regions.pl mapped_protein_domains.gff3 > categorized-gvs.w_regions.gvf
 #
 # Example region input lines (produced by protein2genome.pl):
 #
@@ -18,7 +18,7 @@
 # These two entries specify that INTERPRO domain IPR003582 of protein-coding transcript CDS:4R79.1a maps
 # to two genomic regions, one at chromosome V from 7642716 to 7642826, and one at a neighboring location on
 # chromosome V from 7642542 to 7642670. The mapping of a protein domain to more than one genomic location
-# could be because a protein contains more than one copies of the domain (as shown in this case) or because
+# is possible because a protein contains more than one copies of the domain (as shown in this case) or because
 # a single domain spans a splice junction and is therefore split-mapped to multiple genomic locations. 
 # Note that the format of the ID entry does not follow any special syntax and is just interpreted as 
 # the name of the genomic region that is copied over into the annotated GVF output file. Also 'p_start' 
@@ -39,20 +39,14 @@
 use strict;
 use Set::IntervalTree;
 
-print "[annotate-regions.pl] Start executing script on ";
-system("date");
+print STDERR "[annotate-regions.pl] Start executing script on ".localtime()."\n";
 
-my $categorized_GVs = $ARGV[0] or die "[annotate-regions.pl] input file with categorized GVs not specified\n";
-my $region_file = $ARGV[1] or die "[annotate-regions.pl] input file with genomic regions not specified\n";
-my $out_file = $ARGV[2] or die "[annotate-regions.pl] output file not specified\n";
-
-open(GV, $categorized_GVs) || die "[annotate-regions.pl] $!: $categorized_GVs\n";
-open(REGION, $region_file) || die "[annotate-regions.pl] $!: $region_file\n";
-open(OUT, ">$out_file") || die "[annotate-regions.pl] $!: $out_file\n";
+my $region_file = $ARGV[0] or die "[annotate-regions.pl] input file with genomic regions not specified\n";
 
 my $tree = Set::IntervalTree->new;
   
 my $num_regions = 0;
+open(REGION, $region_file) || die "[annotate-regions.pl] $!: $region_file\n";
 while(<REGION>)
 {
 	chomp;
@@ -76,19 +70,21 @@ while(<REGION>)
 		
 	$num_regions++;
 }
-print "[annotate-regions.pl] $num_regions regions read from file $region_file\n";
+close(REGION);
+
+print STDERR "[annotate-regions.pl] $num_regions regions read from file $region_file\n";
 
 # annotate GVs with region IDs
 my $num_gvs = 0;
 my $num_annotated_gvs = 0;
-while(<GV>) 
+while(<STDIN>) 
 {
 	chomp;
 	my $line = $_;
 
 	if ($line =~ /^[#\s]/)
 	{
-		print OUT "$line\n";
+		print "$line\n";
 		next;
 	}
 			
@@ -115,22 +111,15 @@ while(<GV>)
 		$annotated{$r_id} = 1;
 	}
 
-	print OUT $line;
-	print OUT ";region=$regions" if ($regions);
-	print OUT "\n";
+	print $line;
+	print ";region=$regions" if ($regions);
+	print "\n";
 	
 	$num_gvs ++;
 	$num_annotated_gvs ++ if ($regions);
 }
 
-print "[annotate-regions.pl] $num_gvs GVs written to $out_file\n";
-print "[annotate-regions.pl] $num_annotated_gvs GVs overlapped with input regions.\n";
+print STDERR "[annotate-regions.pl] $num_gvs GVs written.\n";
+print STDERR "[annotate-regions.pl] $num_annotated_gvs GVs overlapped with input regions.\n";
 	
-close(GV);
-close(REGION);
-close(OUT);
-
-#print STDERR "[annotate-regions.pl] $overlapping_regions regions overlap with GVs.\n";
-
-print "[annotate-regions.pl] Done at ";
-system("date");
+print STDERR "[annotate-regions.pl] Done at ".localtime()."\n";
