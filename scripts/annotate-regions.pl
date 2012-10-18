@@ -2,13 +2,13 @@
 
 #------------------------------------------------------------------------------------------------
 # DESCR: annotate GVs with genomic regions they overlap with
-# INPUT: 1) list of GVs in GVF format (CV_categorized_GVs.gvf output file) 
+# INPUT: 1) list of GVs in GVF format (categorized-gvs.gvf output file) 
 #        2) genomic regions in GFF3 format (protein2genome.pl output)  
 # OUTPUT: GVs with annotated regions in GVF format
 #
 # SYNOPSIS:
 #
-#   ./annotate-regions.pl CV_categorized_GVs.gvf mapped_protein_domains.gff3 CV_categorized_GVs.w_regions.gvf
+#   ./annotate-regions.pl categorized-gvs.gvf mapped_protein_domains.gff3 categorized-gvs.w_regions.gvf
 #
 # Example region input lines (produced by protein2genome.pl):
 #

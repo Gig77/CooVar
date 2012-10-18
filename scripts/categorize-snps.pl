@@ -2,7 +2,7 @@
 
 use strict;
 
-print "[categorize-SNPs.pl] Start executing script on ";
+print "[categorize-snps.pl] Start executing script on ";
 system("date");
 
 my %ref_cdna=();
@@ -31,20 +31,20 @@ sub classify_grantham
         }
         else
         {
-                print "[categorize-SNPs.pl] WARNING: Grantham score out of boundary: $grantham_score\n";
+                print "[categorize-snps.pl] WARNING: Grantham score out of boundary: $grantham_score\n";
         }
 	return $category;
 }
 
 
-open(D,$ARGV[0]) || die "[categorize-SNPs.pl] $!: $ARGV[0]\n";		#reference cDNA with start and end position for exons
-open(E,$ARGV[1]) || die "[categorize-SNPs.pl] $!: $ARGV[1]\n";         #target cDNA with start and end position for exons
-open(F,$ARGV[2]) || die "[categorize-SNPs.pl] $!: $ARGV[2]\n";		#Grantham Matrix
-open(G,$ARGV[3]) || die "[categorize-SNPs.pl] $!: $ARGV[3]\n";		#all snps: will be used to categorized those as intronic/intergenic
-open(H,$ARGV[4]) || die "[categorize-SNPs.pl] $!: $ARGV[4]\n";		#splice junction coordinates
-open(I,$ARGV[5]) || die "[categorize-SNPs.pl] $!: $ARGV[5]\n";		#gff3_trans file for annotating SNPs
-open(FREQ,">$ARGV[6]") || die "[categorize-SNPs.pl] $!: $ARGV[6]\n";  # snps frequency table
-my $out_dir = $ARGV[7] or die "[categorize-SNPs.pl] output directory not specified\n";
+open(D,$ARGV[0]) || die "[categorize-snps.pl] $!: $ARGV[0]\n";		#reference cDNA with start and end position for exons
+open(E,$ARGV[1]) || die "[categorize-snps.pl] $!: $ARGV[1]\n";         #target cDNA with start and end position for exons
+open(F,$ARGV[2]) || die "[categorize-snps.pl] $!: $ARGV[2]\n";		#Grantham Matrix
+open(G,$ARGV[3]) || die "[categorize-snps.pl] $!: $ARGV[3]\n";		#all snps: will be used to categorized those as intronic/intergenic
+open(H,$ARGV[4]) || die "[categorize-snps.pl] $!: $ARGV[4]\n";		#splice junction coordinates
+open(I,$ARGV[5]) || die "[categorize-snps.pl] $!: $ARGV[5]\n";		#gff3_trans file for annotating SNPs
+open(FREQ,">$ARGV[6]") || die "[categorize-snps.pl] $!: $ARGV[6]\n";  # snps frequency table
+my $out_dir = $ARGV[7] or die "[categorize-snps.pl] output directory not specified\n";
 
 my %translate = (
         # . - stop
@@ -183,8 +183,8 @@ while(<H>)
 }
 close(H);
 
-open(CAT,">$out_dir/CV_Intermediate_Files/categorized_snp_coords.list") || die "[categorize-SNPs.pl] $!: $out_dir/CV_Intermediate_Files/categorized_snp_coords.list\n";
-open(GVF,">$out_dir/CV_categorized_GVs.gvf") || die "[categorize-SNPs.pl] $!: $out_dir/CV_categorized_GVs.gvf\n";
+open(CAT,">$out_dir/intermediate-files/categorized_snp_coords.list") || die "[categorize-snps.pl] $!: $out_dir/intermediate-files/categorized_snp_coords.list\n";
+open(GVF,">$out_dir/categorized-gvs.gvf") || die "[categorize-snps.pl] $!: $out_dir/categorized-gvs.gvf\n";
 print GVF "\#\#gff-version 3\n";
 print GVF "\#\#gvf-version 1\.05\n";
 
@@ -245,7 +245,7 @@ for my $key (keys %target_seq)
 
 	if(scalar(@seq_ref) != scalar(@seq_tar))
 	{
-		print "[categorize-SNPs.pl] WARNING: Inconsistent amount of DNA for $key\n";
+		print "[categorize-snps.pl] WARNING: Inconsistent amount of DNA for $key\n";
 	}
 
 	my $count_codons=0;
@@ -379,10 +379,10 @@ for my $key (keys %target_seq)
 	$freqs ++;
 }
 close(FREQ);
-print "[categorize-SNPs.pl] $freqs lines written to $ARGV[6]\n";
+print "[categorize-snps.pl] $freqs lines written to $ARGV[6]\n";
 
 #find SNPs that impact splice junctions
-print "[categorize-SNPs.pl] Determining SNPs impacting splice junctions\n";
+print "[categorize-snps.pl] Determining SNPs impacting splice junctions\n";
 for my $key (keys %all_snps)
 {
 	#next if (defined $seen_snps{$key});
@@ -465,11 +465,11 @@ for my $key (keys %snp2gvf_variant)
 }
 close(GVF);
 
-print "[categorize-SNPs.pl] $gvfs GVs written to $out_dir/CV_categorized_GVs.gvf\n";
+print "[categorize-snps.pl] $gvfs GVs written to $out_dir/categorized-gvs.gvf\n";
 
 #now we annotate the SNPs IDs in the gff3 file for transcripts
 
-open(TMP_GFF3,">$out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp") || die "[categorize-SNPs.pl] $!: $out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp\n";
+open(TMP_GFF3,">$out_dir/intermediate-files/transcripts_snps_applied.gff3.tmp") || die "[categorize-snps.pl] $!: $out_dir/intermediate-files/transcripts_snps_applied.gff3.tmp\n";
 while(<I>)
 {
 	chomp($_);
@@ -481,7 +481,7 @@ while(<I>)
 	else
 	{
 		$_=~/\tID\=([^;\s]+)/;
-        print "[categorize-SNPs.pl] ERROR: could not parse ID from following line:\n$_\n" if (!defined $1);
+        print "[categorize-snps.pl] ERROR: could not parse ID from following line:\n$_\n" if (!defined $1);
 		my $trans = $1;
 		print TMP_GFF3 $_,"\;Note\=$transcript2snp_id{$trans}\n";
 	}
@@ -489,5 +489,5 @@ while(<I>)
 close(I);
 #system("rm transcripts.gff3.tmp")
 
-print "[categorize-SNPs.pl] Done at ";
+print "[categorize-snps.pl] Done at ";
 system("date");

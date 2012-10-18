@@ -66,7 +66,7 @@ my $snp_circos = $ARGV[0]  . '.circos';
 my $ins_circos = $ARGV[1]  . '.circos';
 my $del_circos = $ARGV[2]  . '.circos';
 my $exon_circos= $ARGV[3]  . '.circos';
-$exon_circos = "$out_dir/CV_Transcripts/".basename($exon_circos);
+$exon_circos = "$out_dir/transcripts/".basename($exon_circos);
 
 my %snp=();
 while(<SNP>)

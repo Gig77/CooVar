@@ -78,7 +78,7 @@ die "[coovar.pl] ERROR: GVS_TAB_FORMAT file $tab_file not found.\n" unless (!$ta
 die "[coovar.pl] ERROR: GVS_VCF_FORMAT file $vcf_file not found.\n" unless (!$vcf_file or -e $vcf_file);
 
 execute("mkdir $out_dir") unless (-d $out_dir);
-execute("mkdir $out_dir/CV_Intermediate_Files") unless (-d "$out_dir/CV_Intermediate_Files");
+execute("mkdir $out_dir/intermediate-files") unless (-d "$out_dir/intermediate-files");
 
 # index reference FASTA
 print "[coovar.pl] Indexing FASTA file $dna_file on ";
@@ -89,12 +89,12 @@ die ("[coovar.pl]   ERROR: Could not index FASTA file. Do you have write permiss
 print "[coovar.pl]   Done indexing FASTA file on ";
 system("date");
 
-if (!$no_contig_sum or !-e "$out_dir/CV_Intermediate_Files/contigs.summary")
+if (!$no_contig_sum or !-e "$out_dir/intermediate-files/contigs.summary")
 {
 	print "[coovar.pl] Extracting contig information from FASTA on ";
 	system("date");
-	open(CHR, ">$out_dir/CV_Intermediate_Files/contigs.summary")
-		or die("[coovar.pl]   ERROR: Could not write contig information to file $out_dir/CV_Intermediate_Files/contigs.summary\n");
+	open(CHR, ">$out_dir/intermediate-files/contigs.summary")
+		or die("[coovar.pl]   ERROR: Could not write contig information to file $out_dir/intermediate-files/contigs.summary\n");
 	my $stream = $db->get_PrimarySeq_stream();
 	while(my $seq = $stream->next_seq())
 	{
@@ -108,55 +108,55 @@ system("date");
 
 if(defined $tab_file)
 {
-	execute("perl $prog_dir/scripts/TAB2CV.pl $tab_file $out_dir/CV_Intermediate_Files");
-	$snp_file = "$out_dir/CV_Intermediate_Files/".basename($tab_file) . '.CV_SNP';
-	$ins_file = "$out_dir/CV_Intermediate_Files/".basename($tab_file) . '.CV_INS';
-	$del_file = "$out_dir/CV_Intermediate_Files/".basename($tab_file) . '.CV_DEL';
+	execute("perl $prog_dir/scripts/tab2cv.pl $tab_file $out_dir/intermediate-files");
+	$snp_file = "$out_dir/intermediate-files/".basename($tab_file) . '.snp';
+	$ins_file = "$out_dir/intermediate-files/".basename($tab_file) . '.ins';
+	$del_file = "$out_dir/intermediate-files/".basename($tab_file) . '.del';
 }
 if(defined $vcf_file)
 {
-	execute("perl $prog_dir/scripts/VCF2CV.pl $vcf_file $out_dir/CV_Intermediate_Files");
-    $snp_file = "$out_dir/CV_Intermediate_Files/".basename($vcf_file) .	'.CV_SNP';
-    $ins_file = "$out_dir/CV_Intermediate_Files/".basename($vcf_file) .	'.CV_INS';
-    $del_file = "$out_dir/CV_Intermediate_Files/".basename($vcf_file) .	'.CV_DEL';
+	execute("perl $prog_dir/scripts/vcf2cv.pl $vcf_file $out_dir/intermediate-files");
+    $snp_file = "$out_dir/intermediate-files/".basename($vcf_file) .	'.snp';
+    $ins_file = "$out_dir/intermediate-files/".basename($vcf_file) .	'.ins';
+    $del_file = "$out_dir/intermediate-files/".basename($vcf_file) .	'.del';
 }
 
-execute("mkdir $out_dir/CV_SNPs") unless (-d "$out_dir/CV_SNPs");
-execute("mkdir $out_dir/CV_Insertions") unless (-d "$out_dir/CV_Insertions");
-execute("mkdir $out_dir/CV_Deletions") unless (-d "$out_dir/CV_Deletions");
-execute("mkdir $out_dir/CV_Transcripts") unless (-d "$out_dir/CV_Transcripts");
+execute("mkdir $out_dir/snps") unless (-d "$out_dir/snps");
+execute("mkdir $out_dir/insertions") unless (-d "$out_dir/insertions");
+execute("mkdir $out_dir/deletions") unless (-d "$out_dir/deletions");
+execute("mkdir $out_dir/transcripts") unless (-d "$out_dir/transcripts");
 
 print "[coovar.pl] Checking consistency of GV files on ";
 system("date");
-execute("perl $prog_dir/scripts/revise-GV-files.pl $snp_file $ins_file $del_file $out_dir");
+execute("perl $prog_dir/scripts/revise-gv-files.pl $snp_file $ins_file $del_file $out_dir");
 
-my $ex_snps = "$out_dir/CV_SNPs/excluded_" . basename($snp_file);
-my $ex_ins = "$out_dir/CV_Insertions/excluded_" . basename($ins_file);
-my $ex_del = "$out_dir/CV_Deletions/excluded_" . basename($del_file);
+my $ex_snps = "$out_dir/snps/excluded_" . basename($snp_file);
+my $ex_ins = "$out_dir/insertions/excluded_" . basename($ins_file);
+my $ex_del = "$out_dir/deletions/excluded_" . basename($del_file);
 
-$snp_file = "$out_dir/CV_SNPs/kept_" . basename($snp_file);
-$ins_file = "$out_dir/CV_Insertions/kept_" . basename($ins_file);
-$del_file = "$out_dir/CV_Deletions/kept_" . basename($del_file);
+$snp_file = "$out_dir/snps/kept_" . basename($snp_file);
+$ins_file = "$out_dir/insertions/kept_" . basename($ins_file);
+$del_file = "$out_dir/deletions/kept_" . basename($del_file);
 
 print "[coovar.pl] Extracting cDNA sequence from reference on ";
 system("date");
-execute("perl $prog_dir/scripts/extract-cDNA.pl $exon_file $dna_file $out_dir");
+execute("perl $prog_dir/scripts/extract-cdna.pl $exon_file $dna_file $out_dir");
 
 print "[coovar.pl] Applying SNPs to cDNA sequences on ";
 system("date");
-execute("perl $prog_dir/scripts/apply-SNPs.pl $out_dir/CV_Transcripts/reference_cDNA.exons $snp_file $out_dir");
+execute("perl $prog_dir/scripts/apply-snps.pl $out_dir/transcripts/reference_cdna.exons $snp_file $out_dir");
 
 print "[coovar.pl] Categorizing SNPs on ";
 system("date");
-execute("perl $prog_dir/scripts/categorize-SNPs.pl $out_dir/CV_Transcripts/reference_cDNA.exons $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.exons $prog_dir/lib/grantham_matrix  $snp_file $out_dir/CV_Intermediate_Files/splice_junctions.tmp $out_dir/CV_Intermediate_Files/transcripts.gff3.tmp $out_dir/CV_Intermediate_Files/snps_frequency.table $out_dir");
+execute("perl $prog_dir/scripts/categorize-snps.pl $out_dir/transcripts/reference_cdna.exons $out_dir/intermediate-files/target_cdna_snps.exons $prog_dir/lib/grantham_matrix  $snp_file $out_dir/intermediate-files/splice_junctions.tmp $out_dir/intermediate-files/transcripts.gff3.tmp $out_dir/intermediate-files/snps_frequency.table $out_dir");
 
 print "[coovar.pl] Generating stats for SNP categorization on ";
 system("date");
-execute("perl $prog_dir/scripts/get-stats-SNPs.pl $out_dir/CV_Intermediate_Files/categorized_snp_coords.list $out_dir");
+execute("perl $prog_dir/scripts/get-stats-snps.pl $out_dir/intermediate-files/categorized_snp_coords.list $out_dir");
 
 print "[coovar.pl] Analyzing insertions and deletions on ";
 system("date");
-execute("perl $prog_dir/scripts/apply-insertions-deletions.pl $out_dir/CV_Transcripts/reference_cDNA.exons $out_dir/CV_Intermediate_Files/target_cDNA_SNPs.exons $out_dir/CV_Intermediate_Files/categorized_snp_coords.list $ins_file $del_file $out_dir/CV_categorized_GVs.gvf $out_dir/CV_Intermediate_Files/transcripts_snps_applied.gff3.tmp $out_dir/CV_Intermediate_Files/splice_junctions.tmp $out_dir");
+execute("perl $prog_dir/scripts/apply-insertions-deletions.pl $out_dir/transcripts/reference_cdna.exons $out_dir/intermediate-files/target_cdna_snps.exons $out_dir/intermediate-files/categorized_snp_coords.list $ins_file $del_file $out_dir/categorized-gvs.gvf $out_dir/intermediate-files/transcripts_snps_applied.gff3.tmp $out_dir/intermediate-files/splice_junctions.tmp $out_dir");
 
 if($circos == 1)
 {
@@ -165,8 +165,8 @@ if($circos == 1)
 	execute("perl $prog_dir/scripts/parse2circos.pl $snp_file $ins_file $del_file $exon_file $dna_file $out_dir"); 
 }
 
-print "[coovar.pl] Categorized GVs can be found in $out_dir/CV_categorized_GVs.gvf\n";
-print "[coovar.pl] Categorized transcripts can be found in $out_dir/CV_transcripts.gff3\n";
+print "[coovar.pl] Categorized GVs can be found in $out_dir/categorized-gvs.gvf\n";
+print "[coovar.pl] Categorized transcripts can be found in $out_dir/transcripts.gff3\n";
 
 print "[coovar.pl] Done at ";
 system("date");

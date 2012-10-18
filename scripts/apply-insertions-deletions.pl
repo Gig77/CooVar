@@ -342,14 +342,14 @@ while(<DEL>)
 }
 close(DEL);
 
-open(MOD_PFA,">$out_dir/CV_Transcripts/variant_cDNA.exons") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant_cDNA.exons\n";;
-open(MOD_cDNA,">$out_dir/CV_Transcripts/variant_cDNA.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant_cDNA.fasta\n";
-open(MOD_PEP,">$out_dir/CV_Transcripts/variant_peptides.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant_peptides.fasta\n";
-open(GENE_SUMMARY,">$out_dir/CV_Intermediate_Files/variant.summary") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Intermediate_Files/variant.summary\n";
-open(STAT,">$out_dir/CV_Transcripts/variant.stat") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/variant.stat\n";
-open(ALIGNMENT,">$out_dir/CV_Transcripts/reference_variant.alignment") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Transcripts/reference_variant.alignment\n";
-open(DIST_INS,">$out_dir/CV_Insertions/distribution_insertions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Insertions/distribution_insertions.out\n";
-open(DIST_DEL,">$out_dir/CV_Deletions/distribution_deletions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_Deletions/distribution_deletions.out\n";
+open(MOD_PFA,">$out_dir/transcripts/variant_cdna.exons") || die "[apply-insertions-deletions.pl] $!: $out_dir/transcripts/variant_cdna.exons\n";;
+open(MOD_cDNA,">$out_dir/transcripts/variant_cdna.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/transcripts/variant_cdna.fasta\n";
+open(MOD_PEP,">$out_dir/transcripts/variant_peptides.fasta") || die "[apply-insertions-deletions.pl] $!: $out_dir/transcripts/variant_peptides.fasta\n";
+open(GENE_SUMMARY,">$out_dir/intermediate-files/variant.summary") || die "[apply-insertions-deletions.pl] $!: $out_dir/intermediate-files/variant.summary\n";
+open(STAT,">$out_dir/transcripts/variant.stat") || die "[apply-insertions-deletions.pl] $!: $out_dir/transcripts/variant.stat\n";
+open(ALIGNMENT,">$out_dir/transcripts/reference_variant.alignment") || die "[apply-insertions-deletions.pl] $!: $out_dir/transcripts/reference_variant.alignment\n";
+open(DIST_INS,">$out_dir/insertions/distribution_insertions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/insertions/distribution_insertions.out\n";
+open(DIST_DEL,">$out_dir/deletions/distribution_deletions.out") || die "[apply-insertions-deletions.pl] $!: $out_dir/deletions/distribution_deletions.out\n";
 
 my %count_orf_status=();
 my @dist_disrupted;
@@ -896,13 +896,13 @@ close(GVF);
 close(ALIGNMENT);
 
 print "[apply-insertions-deletions.pl] $gvfs lines added to $gvf_gvs\n";
-print "[apply-insertions-deletions.pl] $mod_pfas lines written to $out_dir/CV_Transcripts/variant_cDNA.exons\n";
-print "[apply-insertions-deletions.pl] $mod_cdnas lines written to $out_dir/CV_Transcripts/variant_cDNA.fasta\n";
-print "[apply-insertions-deletions.pl] $mod_peps lines written to $out_dir/CV_Transcripts/variant_peptides.fasta\n";
-print "[apply-insertions-deletions.pl] $summaries lines written to $out_dir/CV_Intermediate_Files/variant.summary\n";
-print "[apply-insertions-deletions.pl] $alignments lines written to $out_dir/CV_Transcripts/reference_variant.alignment\n";
+print "[apply-insertions-deletions.pl] $mod_pfas lines written to $out_dir/transcripts/variant_cdna.exons\n";
+print "[apply-insertions-deletions.pl] $mod_cdnas lines written to $out_dir/transcripts/variant_cdna.fasta\n";
+print "[apply-insertions-deletions.pl] $mod_peps lines written to $out_dir/transcripts/variant_peptides.fasta\n";
+print "[apply-insertions-deletions.pl] $summaries lines written to $out_dir/intermediate-files/variant.summary\n";
+print "[apply-insertions-deletions.pl] $alignments lines written to $out_dir/transcripts/reference_variant.alignment\n";
 
-open(FINAL_GFF3,">$out_dir/CV_transcripts.gff3") || die "[apply-insertions-deletions.pl] $!: $out_dir/CV_transcripts.gff3\n";
+open(FINAL_GFF3,">$out_dir/transcripts.gff3") || die "[apply-insertions-deletions.pl] $!: $out_dir/transcripts.gff3\n";
 
 while(<TRANS_GFF3>)
 {
@@ -973,7 +973,7 @@ for my $key (sort keys %count_overall_impact)
 }
 
 close(STAT);
-print "[apply-insertions-deletions.pl] Variant statistics written to $out_dir/CV_Transcripts/variant.stat\n";
+print "[apply-insertions-deletions.pl] Variant statistics written to $out_dir/transcripts/variant.stat\n";
 
 print DIST_INS "Length Distribution of All Insertions\n";
 print DIST_INS "-------------------------------------\n";
@@ -1018,8 +1018,8 @@ for (my $i=0;$i<@dist_del_exons;$i++)
 close(DIST_INS);
 close(DIST_DEL);
 
-print "[apply-insertions-deletions.pl] Insertion distribution written to $out_dir/CV_Insertions/distribution_insertions.out\n";
-print "[apply-insertions-deletions.pl] Deletion distribution written to $out_dir/CV_Deletions/distribution_deletions.out\n";
+print "[apply-insertions-deletions.pl] Insertion distribution written to $out_dir/insertions/distribution_insertions.out\n";
+print "[apply-insertions-deletions.pl] Deletion distribution written to $out_dir/deletions/distribution_deletions.out\n";
 
 
 print "[apply-insertions-deletions.pl] Done at ";

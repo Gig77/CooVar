@@ -3,21 +3,21 @@
 use strict;
 use File::Basename;
 
-print "[VCF2CV.pl] Start executing script on ";
+print "[vcf2cv.pl] Start executing script on ";
 system("date");
 
 #this script takes as input a VCF file and generates the necessary input files for SNPs, insertions and deletions
 
-print "[VCF2CV.pl] Parsing VCF input file on ";
+print "[vcf2cv.pl] Parsing VCF input file on ";
 system("date");
 
-my $out_dir = $ARGV[1] or die "[VCF2CV.pl] output directory not specified\n";
+my $out_dir = $ARGV[1] or die "[vcf2cv.pl] output directory not specified\n";
 open(VCF,$ARGV[0]) || die "$!\n";
 #my $filter_non_pass=$ARGV[1];
 
-my $snp_file = "$out_dir/".basename($ARGV[0]) . '.CV_SNP';
-my $ins_file = "$out_dir/".basename($ARGV[0]) . '.CV_INS';
-my $del_file = "$out_dir/".basename($ARGV[0]) . '.CV_DEL';
+my $snp_file = "$out_dir/".basename($ARGV[0]) . '.snp';
+my $ins_file = "$out_dir/".basename($ARGV[0]) . '.ins';
+my $del_file = "$out_dir/".basename($ARGV[0]) . '.del';
 
 open(SNP,">$snp_file");
 open(INS,">$ins_file");
@@ -41,14 +41,14 @@ while(<VCF>)
 	# sanity check
 	if (!$tar or !$ref)
 	{
-		print "[VCF2CV.pl]   WARNING: Invalid VCF entry: $_\n";
+		print "[vcf2cv.pl]   WARNING: Invalid VCF entry: $_\n";
 		next;
 	};
 	
 	# ignore monomorphic variants (no change)
 	if ($tar eq '.' or $ref eq $tar)
 	{
-		print "[VCF2CV.pl]   WARNING: Ignoring monomorphic variant: $_\n";
+		print "[vcf2cv.pl]   WARNING: Ignoring monomorphic variant: $_\n";
 		next;
 	};
 
@@ -91,12 +91,12 @@ close(SNP);
 close(INS);
 close(DEL);
 
-print "[VCF2CV.pl]   WARNING: $mult_alt variants had multiple alternative alleles; only first alternative allele will be considered\n"
+print "[vcf2cv.pl]   WARNING: $mult_alt variants had multiple alternative alleles; only first alternative allele will be considered\n"
 	if ($mult_alt > 0);
 
-print "[VCF2CV.pl]   $snps SNPs written to $snp_file...\n";
-print "[VCF2CV.pl]   $inss insertions written to $ins_file...\n";
-print "[VCF2CV.pl]   $dels deletions written to $del_file...\n";
+print "[vcf2cv.pl]   $snps SNPs written to $snp_file...\n";
+print "[vcf2cv.pl]   $inss insertions written to $ins_file...\n";
+print "[vcf2cv.pl]   $dels deletions written to $del_file...\n";
 
-print "[VCF2CV.pl] Done at ";
+print "[vcf2cv.pl] Done at ";
 system("date");

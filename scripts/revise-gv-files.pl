@@ -3,17 +3,17 @@
 use strict;
 use File::Basename;
 
-print "[revise-GV-files.pl] Start executing script on ";
+print "[revise-gv-files.pl] Start executing script on ";
 system("date");
 
 my $out_dir = $ARGV[3];
 
 # reading contig information
 my %contigs;
-print "[revise-GV-files.pl] Reading contig information from $out_dir/CV_Intermediate_Files/contigs.summary on ";
+print "[revise-gv-files.pl] Reading contig information from $out_dir/intermediate-files/contigs.summary on ";
 system("date");
-open(CHR, "$out_dir/CV_Intermediate_Files/contigs.summary")
-	or die("[revise-GV-files.pl]   ERROR: Could not read contig information.\n");
+open(CHR, "$out_dir/intermediate-files/contigs.summary")
+	or die("[revise-gv-files.pl]   ERROR: Could not read contig information.\n");
 while(<CHR>)
 {
 	chomp;
@@ -22,30 +22,30 @@ while(<CHR>)
 }
 close(CHR);
 
-open(SNP,$ARGV[0]) || die "[revise-GV-files.pl] $!: $ARGV[0]\n";	
-open(INS,$ARGV[1]) || die "[revise-GV-files.pl] $!: $ARGV[1]\n";
-open(DEL,$ARGV[2]) || die "[revise-GV-files.pl] $!: $ARGV[2]\n";
+open(SNP,$ARGV[0]) || die "[revise-gv-files.pl] $!: $ARGV[0]\n";	
+open(INS,$ARGV[1]) || die "[revise-gv-files.pl] $!: $ARGV[1]\n";
+open(DEL,$ARGV[2]) || die "[revise-gv-files.pl] $!: $ARGV[2]\n";
 
-my $output_snp = "$out_dir/CV_SNPs/kept_" . basename($ARGV[0]);
-my $excluded_snp = "$out_dir/CV_SNPs/excluded_" . basename($ARGV[0]);
+my $output_snp = "$out_dir/snps/kept_" . basename($ARGV[0]);
+my $excluded_snp = "$out_dir/snps/excluded_" . basename($ARGV[0]);
 
 open(KEPT_SNP,">$output_snp");
 open(EXC_SNP,">$excluded_snp");
 
-my $output_ins = "$out_dir/CV_Insertions/kept_" . basename($ARGV[1]);
-my $excluded_ins = "$out_dir/CV_Insertions/excluded_" . basename($ARGV[1]);
+my $output_ins = "$out_dir/insertions/kept_" . basename($ARGV[1]);
+my $excluded_ins = "$out_dir/insertions/excluded_" . basename($ARGV[1]);
 
 open(KEPT_INS,">$output_ins");
 open(EXC_INS,">$excluded_ins");
 
-my $output_del = "$out_dir/CV_Deletions/kept_" . basename($ARGV[2]);
-my $excluded_del = "$out_dir/CV_Deletions/excluded_" . basename($ARGV[2]);
+my $output_del = "$out_dir/deletions/kept_" . basename($ARGV[2]);
+my $excluded_del = "$out_dir/deletions/excluded_" . basename($ARGV[2]);
 
 open(KEPT_DEL,">$output_del");
 open(EXC_DEL,">$excluded_del");
 
 # revising SNPs
-print "[revise-GV-files.pl] Revising SNPs... on ";
+print "[revise-gv-files.pl] Revising SNPs... on ";
 system("date");
 
 my $kept = 0;
@@ -85,14 +85,14 @@ close(EXC_SNP);
 
 if ($excluded > 0)
 {
-	print "[revise-GV-files.pl]   **************\n";
-	print "[revise-GV-files.pl]   *** WARNING: $excluded SNPs have been excluded from analysis! Check file $excluded_snp for additional information.\n";
-	print "[revise-GV-files.pl]   **************\n";
+	print "[revise-gv-files.pl]   **************\n";
+	print "[revise-gv-files.pl]   *** WARNING: $excluded SNPs have been excluded from analysis! Check file $excluded_snp for additional information.\n";
+	print "[revise-gv-files.pl]   **************\n";
 }
-print "[revise-GV-files.pl]   $kept kept SNPs written to $output_snp\n";
+print "[revise-gv-files.pl]   $kept kept SNPs written to $output_snp\n";
 
 # revising insertions
-print "[revise-GV-files.pl] Revising insertions... on ";
+print "[revise-gv-files.pl] Revising insertions... on ";
 system("date");
 
 $kept = 0;
@@ -131,14 +131,14 @@ close(EXC_INS);
 
 if ($excluded > 0)
 {
-	print "[revise-GV-files.pl]   **************\n";
-	print "[revise-GV-files.pl]   *** WARNING: $excluded insertions have been excluded from analysis! Check file $excluded_ins for additional information.\n";
-	print "[revise-GV-files.pl]   **************\n";
+	print "[revise-gv-files.pl]   **************\n";
+	print "[revise-gv-files.pl]   *** WARNING: $excluded insertions have been excluded from analysis! Check file $excluded_ins for additional information.\n";
+	print "[revise-gv-files.pl]   **************\n";
 }
-print "[revise-GV-files.pl]   $kept kept insertions written to $output_ins\n";
+print "[revise-gv-files.pl]   $kept kept insertions written to $output_ins\n";
 
 # revising deletions
-print "[revise-GV-files.pl] Revising deletions... on ";
+print "[revise-gv-files.pl] Revising deletions... on ";
 system("date");
 
 $kept = 0;
@@ -177,11 +177,11 @@ close(EXC_DEL);
 
 if ($excluded > 0)
 {
-	print "[revise-GV-files.pl]   **************\n";
-	print "[revise-GV-files.pl]   *** WARNING: $excluded deletions have been excluded from analysis! Check file $excluded_del for additional information.\n";
-	print "[revise-GV-files.pl]   **************\n";
+	print "[revise-gv-files.pl]   **************\n";
+	print "[revise-gv-files.pl]   *** WARNING: $excluded deletions have been excluded from analysis! Check file $excluded_del for additional information.\n";
+	print "[revise-gv-files.pl]   **************\n";
 }
-print "[revise-GV-files.pl]   $kept kept deletions written to $output_del\n";
+print "[revise-gv-files.pl]   $kept kept deletions written to $output_del\n";
 
-print "[revise-GV-files.pl] Done at ";
+print "[revise-gv-files.pl] Done at ";
 system("date");
