@@ -15,7 +15,7 @@ CooVar version 0.03 (Jul 19th, 2012)
 
 To install CooVar, open a Linux terminal and run the following commands:
 
-tar xvf coovar-0.04.tar.gz
+tar xvf CooVar-0.04.tar.gz
 cd coovar-0.04
 chmod +x scripts/* coovar.pl
 
