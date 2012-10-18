@@ -2,16 +2,16 @@
 
 use strict;
 
-print "[apply_SNPs.pl] Start executing script on ";
+print "[apply-snps.pl] Start executing script on ";
 system("date");
 
 my $reference_pfa = $ARGV[0];
 my $snp_list = $ARGV[1];
-my $out_dir = $ARGV[2] or die "[apply_SNPs.pl] output directory not specified\n";
+my $out_dir = $ARGV[2] or die "[apply-snps.pl] output directory not specified\n";
 
-open(D,$reference_pfa) || die "[apply_SNPs.pl] $!: $reference_pfa\n";
+open(D,$reference_pfa) || die "[apply-snps.pl] $!: $reference_pfa\n";
 
-open(E,$snp_list) || die "[apply_SNPs.pl] $!: $snp_list\n";
+open(E,$snp_list) || die "[apply-snps.pl] $!: $snp_list\n";
 
 my %snps = ();
 
@@ -56,8 +56,8 @@ while(<E>)
 }
 close(E);
 
-open(SNP_PFA,">$out_dir/intermediate-files/target_cdna_snps.exons") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/intermediate-files/target_cdna_snps.exons\n");
-open(SNP_FA,">$out_dir/intermediate-files/target_cdna_snps.fasta") or die ("[apply_SNPs.pl] ERROR writing to file $out_dir/intermediate-files/target_cdna_snps.fasta\n");
+open(SNP_PFA,">$out_dir/intermediate-files/target_cdna_snps.exons") or die ("[apply-snps.pl] ERROR writing to file $out_dir/intermediate-files/target_cdna_snps.exons\n");
+open(SNP_FA,">$out_dir/intermediate-files/target_cdna_snps.fasta") or die ("[apply-snps.pl] ERROR writing to file $out_dir/intermediate-files/target_cdna_snps.fasta\n");
 
 my ($snp_pfa_lines, $snp_fa_lines) = (0, 0);
 my $c;
@@ -113,8 +113,8 @@ for my $key (keys %trans_exons)
 close(SNP_PFA);
 close(SNP_FA);
 
-print "[apply_SNPs.pl] $snp_pfa_lines lines written to $out_dir/intermediate-files/target_cdna_snps.exons\n";
-print "[apply_SNPs.pl] $snp_fa_lines lines written to $out_dir/intermediate-files/target_cdna_snps.fasta\n";
+print "[apply-snps.pl] $snp_pfa_lines lines written to $out_dir/intermediate-files/target_cdna_snps.exons\n";
+print "[apply-snps.pl] $snp_fa_lines lines written to $out_dir/intermediate-files/target_cdna_snps.fasta\n";
 
-print "[apply_SNPs.pl] Done at ";
+print "[apply-snps.pl] Done at ";
 system("date");
