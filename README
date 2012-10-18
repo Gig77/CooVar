@@ -15,8 +15,8 @@ CooVar version 0.03 (Jul 19th, 2012)
 
 To install CooVar, open a Linux terminal and run the following commands:
 
-tar xvfz coovar-0.03.tar.gz
-cd COOVAR-0.03
+tar xvf coovar-0.04.tar.gz
+cd coovar-0.04
 chmod +x scripts/* coovar.pl
 
 The program itself is a Perl script and requires the following Perl modules to be 
@@ -242,21 +242,21 @@ The output of CooVar ("CV") is structured as follows:
 |-- categorized-gvs.gvf: each GV and its impact (or not, if silent) on all transcripts. See description in section 6.1 below
 |-- deletions
 |   |-- distribution_deletions.out: length distribution of all deletions and of those deletions impacting exons.
-|   |-- excluded_GVs.del: deletions excluded from the input for not accomplishing the specified format.
-|   |-- kept_GVs.del: deletions kept from the input. The ones to be applied to the transcripts. 
-|   `-- kept_GVs.del.circos: Circos frequency file for deletions. Designed for heatmap visualization.
+|   |-- excluded_gvs.del: deletions excluded from the input for not accomplishing the specified format.
+|   |-- kept_gvs.del: deletions kept from the input. The ones to be applied to the transcripts. 
+|   `-- kept_gvs.del.circos: Circos frequency file for deletions. Designed for heatmap visualization.
 |-- insertions
 |   |-- distribution_insertions.out: length distribution of all insertions and of those insertions impacting exons.
-|   |-- excluded_GVs.ins: insertions excluded from the input for not accomplishing the specified format.
-|   |-- kept_GVs.ins: deletions kept from the input. The ones to be applied to the transcripts.
-|   `-- kept_GVs.ins.circos: Circos frequency file for insertions. Designed for heatmap visualization.
+|   |-- excluded_gvs.ins: insertions excluded from the input for not accomplishing the specified format.
+|   |-- kept_gvs.ins: deletions kept from the input. The ones to be applied to the transcripts.
+|   `-- kept_gvs.ins.circos: Circos frequency file for insertions. Designed for heatmap visualization.
 |-- snps
 |   |-- ambiguous_snps.list: SNPs that fall into 2 or more categories by impacting transcripts differently
 |   |-- categorized_snps.stat: overall and chromosomal frequencies of SNPs per category.
 |   |-- codon_bias.stat: frequency of the location of the SNP within the codon (1,2, or 3) and its impact as syn/non-syn 
-|   |-- excluded_GVs.snp: SNPs excluded from the input for not accomplishing the specified format.
-|   |-- kept_GVs.list.snp: SNPs kept from the input. The ones to be applied to the transcripts. 
-|   `-- kept_GVs.list.snp.circos: Circos frequency file for deletions. Designed for heatmap visualization.
+|   |-- excluded_gvs.snp: SNPs excluded from the input for not accomplishing the specified format.
+|   |-- kept_gvs.list.snp: SNPs kept from the input. The ones to be applied to the transcripts. 
+|   `-- kept_gvs.list.snp.circos: Circos frequency file for deletions. Designed for heatmap visualization.
 |-- transcripts
 |   |-- reference_cdna.exons: reference cDNA shown per exon, per transcript.
 |   |-- variant_cdna.exons: variant cDNA shown per exon, per transcript.
@@ -265,7 +265,7 @@ The output of CooVar ("CV") is structured as follows:
 |   |-- reference_peptides.fasta: reference peptide for each transcript.
 |   |-- variant_peptides.fasta: variant peptide for each transcript.
 |   |-- reference_variant.alignment: alignment of the reference and variant (i.e. all GVs applied) cDNA
-|   |-- exons_nuclear_DNA.gff3.circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
+|   |-- [exon_file_name].circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
 |   `-- variant.stat: distribution of early stop codons along proteins, frequency of different ORF status and summary of impact of GVs on transcripts
 
 (6.1) transcripts.gff3 and categorized-gvs.gvf
@@ -296,7 +296,7 @@ each coding exon. In the first line, The Note tag is used to describe , in a com
 - all deletions impacting the protein-coding transcript,
 - the overall impact of ALL GVs on the ORF (ORF_INTACT/ORF_DISRUPTED/ORF_PRESERVED/FULLY_DELETED)
 - if the ORF is found disrupted by the GVs provided as input, then a percentage in parenthesis indicates the location within the 
-protein where the stop codon occurs. 
+protein where the first stop codon occurs. 
 
 ORF_INTACT: the coding region of the transcript is not impacted by GVs.
 ORF_PRESERVED: the overall impact of GVs on the variant transcript is such that it doesn't introduce an early stop codon, compared to 
