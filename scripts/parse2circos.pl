@@ -142,7 +142,7 @@ while(<EXON>)
 {        
     chomp($_);   
 	next if ($_=~/^\#/);
-	next if ($_!~/\scds\s+\d+\s+\d+/); # 2012-10-04 | CF | ignore non-CDS entries   
+	next if ($_!~/\scds\s+\d+\s+\d+/i); # 2012-10-04 | CF | ignore non-CDS entries   
     my @line=split(/\t/,$_);        
     my $chrom=$line[0];        
     my $start=$line[3];        
