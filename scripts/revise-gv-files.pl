@@ -56,10 +56,9 @@ while(<SNP>)
 	$_=~s/^\s+//;
 	$_=~s/\s+$//;
 	my @line = split(/\s+/,$_);
-	if ((scalar(@line)!=4) || ($line[1]!~/^\d+$/) || ($line[2]!~/[ACTGactg]/) || ($line[2]!~/\w/)
-	|| ($line[3]!~/[ACTGactg]/) || ($line[3]!~/\w/))
+	if ((scalar(@line)!=4) || ($line[1]!~/^\d+$/))
 	{
-		print EXC_SNP $_,"\n";
+		print EXC_SNP $_,"\terror parsing line\n";
 		$excluded ++;
 	}
 	elsif (!exists $contigs{$line[0]})
@@ -71,6 +70,16 @@ while(<SNP>)
 	{
 		print EXC_SNP $_,"\tposition exceeds contig length\n";
 		$excluded ++;		
+	}
+	elsif (($line[2]!~/[ACTGactg]/) || ($line[2]!~/\w/))
+	{
+		print EXC_SNP $_,"\tinvalid reference allele\n";
+		$excluded ++;
+	}
+	if (($line[3]!~/[ACTGactg]/) || ($line[3]!~/\w/))
+	{
+		print EXC_SNP $_,"\tinvalid alternative allele\n";
+		$excluded ++;
 	}
 	else
 	{
