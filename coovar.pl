@@ -6,6 +6,8 @@ use File::Basename;
 use Cwd;
 use Bio::DB::Fasta;
 
+our $VERSION = '0.04';
+
 my $exon_file;
 my $dna_file;
 my $snp_file;
@@ -64,6 +66,7 @@ print "[coovar.pl] Start executing script on ";
 system("date");
 
 print "[coovar.pl] Program directory: $prog_dir\n";
+print "[coovar.pl] Program version: $VERSION\n";
 print "[coovar.pl] Command line: ".__FILE__." $params\n";
 print "[coovar.pl]   REFERENCE: $dna_file\n";
 print "[coovar.pl]   CODING EXONS: $exon_file\n";
