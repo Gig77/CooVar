@@ -1,0 +1,5 @@
+1	protein_coding	exon	152680636	152680870	.	+	.	 gene_id "ENSG00000187170"; transcript_id "ENST00000368777"; exon_number "1"; gene_name "LCE4A"; gene_biotype "protein_coding"; transcript_name "LCE4A-001";
+1	protein_coding	exon	152681531	152681967	.	+	.	 gene_id "ENSG00000187170"; transcript_id "ENST00000368777"; exon_number "2"; gene_name "LCE4A"; gene_biotype "protein_coding"; transcript_name "LCE4A-001";
+1	protein_coding	CDS	152681552	152681848	.	+	0	 gene_id "ENSG00000187170"; transcript_id "ENST00000368777"; exon_number "2"; gene_name "LCE4A"; gene_biotype "protein_coding"; transcript_name "LCE4A-001"; protein_id "ENSP00000357766";
+1	protein_coding	start_codon	152681552	152681554	.	+	0	 gene_id "ENSG00000187170"; transcript_id "ENST00000368777"; exon_number "2"; gene_name "LCE4A"; gene_biotype "protein_coding"; transcript_name "LCE4A-001";
+1	protein_coding	stop_codon	152681849	152681851	.	+	0	 gene_id "ENSG00000187170"; transcript_id "ENST00000368777"; exon_number "2"; gene_name "LCE4A"; gene_biotype "protein_coding"; transcript_name "LCE4A-001";

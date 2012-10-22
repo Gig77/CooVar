@@ -1,0 +1,7 @@
+# P. falciparum
+chr - I I 0 15072420 chr1
+chr - II II 0 15279322 chr2
+chr - III III 0 13783684 chr3
+chr - IV IV 0 17493783 chr4
+chr - V V 0 20924142 chr5
+chr - X X 0 17718853 chrX
