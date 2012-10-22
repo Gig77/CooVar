@@ -105,6 +105,8 @@ if (!$no_contig_sum or !-e "$out_dir/intermediate-files/contigs.summary")
 	}
 	close(CHR);	
 }
+$db = undef; # 2012-10-22 | CF | free file handles; otherwise sequence fetch would fail after indexing in extract-cdna.pl
+
 
 print "[coovar.pl] Parsing GV files on ";
 system("date");
