@@ -1,4 +1,4 @@
-CooVar version 0.04 (Oct 17th, 2012)
+CooVar version 0.05 (Oct 22th, 2012)
 ====================================
 
 (0) INSTALL
@@ -15,8 +15,8 @@ CooVar version 0.04 (Oct 17th, 2012)
 
 To install CooVar, open a Linux terminal and run the following commands:
 
-tar xvf CooVar-0.04.tar.gz
-cd coovar-0.04
+tar xvf CooVar-0.05.tar.gz
+cd coovar-0.05
 chmod +x scripts/* coovar.pl
 
 The program itself is a Perl script and requires the following Perl modules to be 
@@ -153,8 +153,9 @@ preceded by either 'Parent=' , 'ID=' or 'transcript_id '.
 
 Parameter: -r
 Self explanatory. Avoid incompatibilities between the transcript coordinates and the chromosomes (e.g. transcripts with coordinates 
-out of boundaries, or including transcripts from chromosomes that are not in the fasta file).
-
+out of boundaries, or including transcripts from chromosomes that are not in the fasta file). Entries in the FASTA file may have any 
+line length up to 65,536 characters, and different line lengths are allowed in the same file. However, within a sequence entry, 
+all lines must be the same length except for the last (see Bio::DB::Fasta module).
 
 (5.3) A list of SNV, INS and DEL in either VCF4.0 format or TAB format
 ----------------------------------------------------------------------

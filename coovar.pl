@@ -6,7 +6,7 @@ use File::Basename;
 use Cwd;
 use Bio::DB::Fasta;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my $exon_file;
 my $dna_file;

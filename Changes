@@ -1,13 +1,7 @@
 Revision history for CooVar.
 
-latest
-	- extract_cDNA.pl: get_pep(): use Bio::Seq->translate instead of Bio::SeqUtils->translate_3frames because 3-frame translation throws exception for exons with length < 3
-	- new test script test/test_elegans.sh
-0.03  Thu Jul 19 14:00:00 2012
-    - program name change from "Variant-Analyzer" to "CooVar"
-    - performance improvements in apply-insertions-deletions.pl by using interval trees to look for GV/exon overlap
-0.02  Mon Nov 21 13:00:00 2011
-	- added variant_type to GVF output
+0.05 Mon Oct 22 11:36:00 2012 
+	- first version for public release; includes several bug fixes and test cases
 0.01  Tue Feb 15 13:00:00 2011
 	- original version
 
