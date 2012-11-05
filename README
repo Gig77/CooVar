@@ -9,6 +9,7 @@ CooVar version 0.05 (Oct 22th, 2012)
 (5) INPUT
 (6) OUTPUT
 (7) TIPS FOR RUNNING COOVAR FASTER
+(8) HOW TO CITE COOVAR
 
 (0) INSTALL
 -----------
@@ -342,3 +343,12 @@ CooVar for different chromosomes separately. Also, consider commenting out lines
 if re-running a particular step of the analysis is not required. For example, by commenting out the line executing
 the 'extract-cdna.pl' script, CooVar would not extract cDNA sequences when it is run again, using existing output
 files from previous runs.
+
+(8) HOW TO CITE COOVAR
+----------------------
+
+If you find CooVar useful in your work, please cite:
+
+Vergara IA, Frech C and Chen N. 
+CooVar: Co-occurring variant analyzer
+BMC Research Notes 2012, 5:615
