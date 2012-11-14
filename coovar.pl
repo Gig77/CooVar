@@ -5,6 +5,7 @@ use Getopt::Long;
 use File::Basename;
 use Cwd;
 use Bio::DB::Fasta;
+use Config;
 
 our $VERSION = '0.05';
 
@@ -65,6 +66,7 @@ $prog_dir = "." if (!$prog_dir);
 print "[coovar.pl] Start executing script on ";
 system("date");
 
+print "[coovar.pl] Operating system: $Config{'osname'} $Config{'archname'}\n";
 print "[coovar.pl] Program directory: $prog_dir\n";
 print "[coovar.pl] Program version: $VERSION\n";
 print "[coovar.pl] Command line: ".__FILE__." $params\n";
