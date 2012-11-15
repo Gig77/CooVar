@@ -18,6 +18,7 @@ perl ../../coovar.pl \
   -r $2 \
   -o out \
   --no_contig_sum \
+  --circos \
   | tee out/coovar.log | grep -iP "(error|warning)"
 
 # check output
