@@ -4,14 +4,14 @@ use strict;
 use File::Basename;
 
 print "[revise-gv-files.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 my $out_dir = $ARGV[3];
 
 # reading contig information
 my %contigs;
 print "[revise-gv-files.pl] Reading contig information from $out_dir/intermediate-files/contigs.summary on ";
-system("date");
+print localtime()."\n";
 open(CHR, "$out_dir/intermediate-files/contigs.summary")
 	or die("[revise-gv-files.pl]   ERROR: Could not read contig information.\n");
 while(<CHR>)
@@ -46,7 +46,7 @@ open(EXC_DEL,">$excluded_del");
 
 # revising SNPs
 print "[revise-gv-files.pl] Revising SNPs... on ";
-system("date");
+print localtime()."\n";
 
 my $kept = 0;
 my $excluded = 0;
@@ -102,7 +102,7 @@ print "[revise-gv-files.pl]   $kept kept SNPs written to $output_snp\n";
 
 # revising insertions
 print "[revise-gv-files.pl] Revising insertions... on ";
-system("date");
+print localtime()."\n";
 
 $kept = 0;
 $excluded = 0;
@@ -148,7 +148,7 @@ print "[revise-gv-files.pl]   $kept kept insertions written to $output_ins\n";
 
 # revising deletions
 print "[revise-gv-files.pl] Revising deletions... on ";
-system("date");
+print localtime()."\n";
 
 $kept = 0;
 $excluded = 0;
@@ -193,4 +193,4 @@ if ($excluded > 0)
 print "[revise-gv-files.pl]   $kept kept deletions written to $output_del\n";
 
 print "[revise-gv-files.pl] Done at ";
-system("date");
+print localtime()."\n";

@@ -4,7 +4,7 @@ use strict;
 use File::Basename;
 
 print "[tab2cv.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 my $out_dir = $ARGV[1] or die "[tab2cv.pl] output directory not specified\n";
 
@@ -56,4 +56,4 @@ print "[tab2cv.pl] $ins insertions written to $ins_file...\n";
 print "[tab2cv.pl] $del deletions written to $del_file...\n";
 
 print "[tab2cv.pl] Done at ";
-system("date");
+print localtime()."\n";

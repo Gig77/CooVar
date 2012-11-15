@@ -8,7 +8,7 @@ use POSIX qw(ceil floor);
 use Set::IntervalTree;
 
 print "[apply-insertions-deletions.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 my %ref_cdnas=();
 
@@ -371,7 +371,7 @@ my ($gvfs, $mod_pfas, $mod_cdnas, $summaries, $mod_peps, $alignments) = (0, 0, 0
 for my $key (keys %chrom_trans)
 {
 	print "[apply-insertions-deletions.pl] Processing chromosome $key on ";
-    system("date");
+    print localtime()."\n";
     
 #	my @transcripts = split(/\s+/,$chrom_trans{$key});
 #	my @insertions = split(/\s+/,$chrom_ins{$key});
@@ -1023,4 +1023,4 @@ print "[apply-insertions-deletions.pl] Deletion distribution written to $out_dir
 
 
 print "[apply-insertions-deletions.pl] Done at ";
-system("date");
+print localtime()."\n";

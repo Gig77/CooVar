@@ -4,12 +4,12 @@ use strict;
 use File::Basename;
 
 print "[vcf2cv.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 #this script takes as input a VCF file and generates the necessary input files for SNPs, insertions and deletions
 
 print "[vcf2cv.pl] Parsing VCF input file on ";
-system("date");
+print localtime()."\n";
 
 my $out_dir = $ARGV[1] or die "[vcf2cv.pl] output directory not specified\n";
 open(VCF,$ARGV[0]) || die "$!\n";
@@ -99,4 +99,4 @@ print "[vcf2cv.pl]   $inss insertions written to $ins_file...\n";
 print "[vcf2cv.pl]   $dels deletions written to $del_file...\n";
 
 print "[vcf2cv.pl] Done at ";
-system("date");
+print localtime()."\n";

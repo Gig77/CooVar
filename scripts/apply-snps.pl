@@ -3,7 +3,7 @@
 use strict;
 
 print "[apply-snps.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 my $reference_pfa = $ARGV[0];
 my $snp_list = $ARGV[1];
@@ -117,4 +117,4 @@ print "[apply-snps.pl] $snp_pfa_lines lines written to $out_dir/intermediate-fil
 print "[apply-snps.pl] $snp_fa_lines lines written to $out_dir/intermediate-files/target_cdna_snps.fasta\n";
 
 print "[apply-snps.pl] Done at ";
-system("date");
+print localtime()."\n";

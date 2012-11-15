@@ -8,7 +8,7 @@ use File::Basename;
 use List::Util qw[min max];
 
 print "[parse2circos.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 sub print_circos
 {
@@ -167,4 +167,4 @@ close(EXON);
 print_circos(\%exons,\%chrom_size,$bin_size,$exon_circos); 
 
 print "[parse2circos.pl] Done at ";
-system("date");
+print localtime()."\n";

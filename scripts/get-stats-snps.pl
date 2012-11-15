@@ -3,7 +3,7 @@
 use strict;
 
 print "[get-stats-snps.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 open(D,$ARGV[0]) || die "[get-stats-snps.pl] $!: $ARGV[0]\n";
 my $out_dir = $ARGV[1] or die "[get-stats-snps.pl] output directory not specified\n";
@@ -203,4 +203,4 @@ close(TYPE);
 print "[get-stats-snps.pl] Categorized SNP statistics written to $out_dir/snps/categorized_snps.stat\n";
 
 print "[get-stats-snps.pl] Done at ";
-system("date");
+print localtime()."\n";

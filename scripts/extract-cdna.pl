@@ -6,7 +6,7 @@ use Bio::SeqIO;
 use Bio::DB::Fasta;
 
 print "[extract-cdna.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 my $out_dir = $ARGV[2] or die "[extract-cdna.pl] output directory not specified\n";
 
@@ -125,6 +125,39 @@ sub get_cDNA
 	return $all;
 }
 
+sub filter_cds
+{
+	my $in = shift;
+	my $out = shift;
+	
+	# filter input GFF/GTF file for CDS features
+	my @cds;
+	open(IN, "$in") or die ("[extract-cdna.pl] ERROR Could not open file $in\n");
+	while(<IN>)
+	{
+		next if (/^\#/);
+		if (/^([^\t]+)\t([^\t]+)\t(cds)\t(\d+)/i)
+		{
+			push(@cds, [$1, $4, $_]);
+		}
+	}
+	close(IN);
+
+	die ("[extract-cdna.pl] ERROR: Could not find coding sequence (CDS) entries in file $in. Please make sure that this files contains features of type 'CDS' (see README).\n")
+		if (@cds == 0);
+	
+	# sort entries
+	my @sorted_cds = sort { $a->[0] cmp $b->[0] || $a->[1] <=> $b->[1] } @cds;
+	
+	# write filtered and sorted CDS to output file
+	open(OUT, ">$out") or die ("[extract-cdna.pl] ERROR Could not write file $out\n");
+	foreach my $e (@sorted_cds)
+	{
+		print OUT $e->[2];
+	}
+	close(OUT);
+}
+
 #open(D,$ARGV[0]) || die "$!\n"; #gff_file
 my $fasta=$ARGV[1];
 
@@ -135,19 +168,11 @@ my %exon_gene=();
 my %exon_phase=();
 
 # filter input GFF/GTF file for CDS features
-print "[extract-cdna.pl] Sorting input GFF file $ARGV[0] ...\n";
-my $cmd = 'grep -iP "\scds\s+\d+\s+\d+"'." $ARGV[0] | sort -k 4 -n > $out_dir/sorted_gff3.tmp";
-print "[extract-cdna.pl]   Executing command: $cmd\n";
-system($cmd) == 0 
-  or die ("[extract-cdna.pl] ERROR executing command: $cmd\n");
-
-# make sure CDS features were found
-my $line_count =  `wc -l < $out_dir/sorted_gff3.tmp`;
-die ("[extract-cdna.pl] ERROR: Could not find coding sequence (CDS) entries in file $ARGV[0]. Please make sure that this files contains features of type 'CDS' (see README).\n")
-	if ($line_count == 0);
+print "[extract-cdna.pl] Filtering and sorting input GFF/GTF file $ARGV[0] ...\n";
+filter_cds($ARGV[0], "$out_dir/intermediate-files/sorted_gff3.tmp");
 
 #gff3 file is sorted according to start 
-open(D,"$out_dir/sorted_gff3.tmp") || die "[extract-cdna.pl] $!: $out_dir/sorted_gff3.tmp\n";
+open(D,"$out_dir/intermediate-files/sorted_gff3.tmp") || die "[extract-cdna.pl] $!: $out_dir/intermediate-files/sorted_gff3.tmp\n";
 
 open(SJ,">$out_dir/intermediate-files/splice_junctions.tmp") || die "[extract-cdna.pl] $!: $out_dir/intermediate-files/splice_junctions.tmp\n";
 
@@ -155,11 +180,10 @@ my %chrom=();
 my %seen=();
 
 
-print "[extract-cdna.pl] Parsing GFF file $out_dir/sorted_gff3.tmp ...\n";
+print "[extract-cdna.pl] Parsing GFF file $out_dir/intermediate-files/sorted_gff3.tmp ...\n";
 while(<D>)
 {
 	chomp($_);
-	next if ($_=~/^\#/);
 	my @line=split(/\t/,$_);
 	my @data=split(/\;/,$line[8]);
 	
@@ -204,7 +228,7 @@ while(<D>)
 	$seen{$id}++;
 }
 close(D);
-system("rm $out_dir/sorted_gff3.tmp");
+#unlink("$out_dir/intermediate-files/sorted_gff3.tmp");
 
 # 2012-10-09 | CF | extend transcript coordinate by three if last CDS is not a stop codon
 # 2012-10-09 | CF | adjust for phase of first exon to ensure correct translation
@@ -290,7 +314,7 @@ for my $chr (sort keys %chrom)
 	my @transcripts = split(/\s+/,$chrom{$chr});
 
 	print "[extract-cdna.pl] Extracting ", scalar(@transcripts) , " transcripts on chromosome $chr on ";
-	system("date");
+	print localtime()."\n";
 
 	for (my $i=0;$i<@transcripts;$i++)
 	{
@@ -335,7 +359,7 @@ for my $chr (sort keys %chrom)
 		}
 	}
 	print "[extract-cdna.pl]   Done with chromosome $chr on ";
-	system("date");
+	print localtime()."\n";
 }
 close(ORI_CDNA);
 close(ORI_PEP);
@@ -349,4 +373,4 @@ print "[extract-cdna.pl] $exons exons written to $out_dir/transcripts/reference_
 print "[extract-cdna.pl] $junctions splice junctions written to $out_dir/intermediate-files/splice_junctions.tmp\n";
 
 print "[extract-cdna.pl] Done at ";
-system("date");
+print localtime()."\n";

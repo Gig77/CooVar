@@ -3,7 +3,7 @@
 use strict;
 
 print "[categorize-snps.pl] Start executing script on ";
-system("date");
+print localtime()."\n";
 
 my %ref_cdna=();
 my %tar_cdna=();
@@ -487,7 +487,6 @@ while(<I>)
 	}
 }
 close(I);
-#system("rm transcripts.gff3.tmp")
 
 print "[categorize-snps.pl] Done at ";
-system("date");
+print localtime()."\n";
