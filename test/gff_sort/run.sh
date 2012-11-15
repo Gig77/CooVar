@@ -20,6 +20,7 @@ perl ../../coovar.pl \
   --no_contig_sum \
   --feature_type exon \
   --feature_source mysource \
+  --circos \
   | tee out/coovar.log | grep -iP "(error|warning)"
 
 # check output
