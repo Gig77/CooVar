@@ -21,6 +21,7 @@ WORM_GVS=/home/cfa24/va_test/Celegans_Hawaiian_CB4856/gvs_hawaiian_strain.list
 
 KEEP_OLD_OUTPUT=0
 
+sh gff_sort/run.sh $KEEP_OLD_OUTPUT $WORM_REF
 sh fully_deleted/run.sh $KEEP_OLD_OUTPUT $WORM_REF
 sh already_disrupted/run.sh $KEEP_OLD_OUTPUT $HUMAN_REF
 sh missense_snp/run.sh $KEEP_OLD_OUTPUT $HUMAN_REF

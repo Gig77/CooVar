@@ -1,0 +1,13 @@
+
+# comment
+IV	Coding_transcript	CDS	17488034	17488119	.	-	2	ID=CDS:4R79.1b;Parent=Transcript:4R79.1b;locus=nas-6;status=Partially_confirmed;wormpep=WP:CE39659
+X	Coding_transcript	CDS	17714656	17714744	.	+	2	ID=CDS:6R55.2;Parent=Transcript:6R55.2;status=Partially_confirmed;wormpep=WP:CE19653
+IV	Coding_transcript	CDS	17487179	17487299	.	-	0	ID=CDS:4R79.1b;Parent=Transcript:4R79.1b;locus=nas-6;status=Partially_confirmed;wormpep=WP:CE39659
+X	Coding_transcript	CDS	17712786	17712934	.	+	0	ID=CDS:6R55.2;Parent=Transcript:6R55.2;status=Partially_confirmed;wormpep=WP:CE19653
+# comment 2
+IV	Coding_transcript	cds	17487351	17487506	.	-	0	ID=CDS:4R79.1b;Parent=Transcript:4R79.1b;locus=nas-6;status=Partially_confirmed;wormpep=WP:CE39659
+
+IV	Coding_transcript	CDS	17488184	17488223	.	-	0	ID=CDS:4R79.1b;Parent=Transcript:4R79.1b;locus=nas-6;status=Partially_confirmed;wormpep=WP:CE39659
+IV	Coding_transcript	CDS	17486937	17487076	.	-	2	ID=CDS:4R79.1b;Parent=Transcript:4R79.1b;locus=nas-6;status=Partially_confirmed;wormpep=WP:CE39659
+X	Coding_transcript	cds	17714369	17714574	.	+	1	ID=CDS:6R55.2;Parent=Transcript:6R55.2;status=Partially_confirmed;wormpep=WP:CE19653
+# comment 3
