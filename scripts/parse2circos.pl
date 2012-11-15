@@ -65,8 +65,7 @@ my $bin_size = ceil(0.001*$genome_length);
 my $snp_circos = $ARGV[0]  . '.circos';
 my $ins_circos = $ARGV[1]  . '.circos';
 my $del_circos = $ARGV[2]  . '.circos';
-my $exon_circos= $ARGV[3]  . '.circos';
-$exon_circos = "$out_dir/transcripts/".basename($exon_circos);
+my $exon_circos = "$out_dir/transcripts/exons.circos";
 
 my %snp=();
 while(<SNP>)
@@ -141,8 +140,6 @@ my %exons=();
 while(<EXON>)      
 {        
     chomp($_);   
-	next if ($_=~/^\#/);
-	next if ($_!~/\scds\s+\d+\s+\d+/i); # 2012-10-04 | CF | ignore non-CDS entries   
     my @line=split(/\t/,$_);        
     my $chrom=$line[0];        
     my $start=$line[3];        

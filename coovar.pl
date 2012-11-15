@@ -7,7 +7,7 @@ use Cwd;
 use Bio::DB::Fasta;
 use Config;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 my $exon_file;
 my $dna_file;
@@ -18,6 +18,8 @@ my $tab_file;
 my $vcf_file;
 my $out_dir;
 my $circos='';
+my $feature_source = '';
+my $feature_type = 'CDS';
 my $no_contig_sum = 0;
 
 sub getTimestamp
@@ -47,12 +49,14 @@ GetOptions ("exon|e=s" => \$exon_file,
 		"vcf|v=s"  => \$vcf_file,
 		"out|o=s"  => \$out_dir,
 		"circos"   => \$circos,
+		"feature_source=s" => \$feature_source,
+		"feature_type=s"   => \$feature_type,
 		"no_contig_sum" => \$no_contig_sum  # undocumented parameter for test purposes
 		);	
 
 unless ($exon_file && $dna_file && ($vcf_file || $tab_file))
 {
-    print "USAGE: ./coovar.pl -e EXONS_GFF -r REFERENCE_FASTA (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [-o OUTPUT_DIRECTORY] [--circos]\n";
+    print "USAGE: ./coovar.pl -e EXONS_GFF -r REFERENCE_FASTA (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [-o OUTPUT_DIRECTORY] [--circos] [--feature_source] [--feature_type]\n";
     print "Program parameter details provided in file README.\n";
     exit;
 }
@@ -76,14 +80,16 @@ print "[coovar.pl]   GVS_TAB_FORMAT: $tab_file\n";
 print "[coovar.pl]   GVS_VCF_FORMAT: $vcf_file\n";
 print "[coovar.pl]   OUTPUT DIRECTORY: $out_dir\n";
 print "[coovar.pl]   CIRCOS FLAG: $circos\n";
+print "[coovar.pl]   FEATURE SOURCE: $feature_source\n";
+print "[coovar.pl]   FEATURE TYPE: $feature_type\n";
 
 die "[coovar.pl] ERROR: EXONS_GFF file $exon_file not found.\n" unless (-e $exon_file);
 die "[coovar.pl] ERROR: REFERENCE file $dna_file not found.\n" unless (-e $dna_file);
 die "[coovar.pl] ERROR: GVS_TAB_FORMAT file $tab_file not found.\n" unless (!$tab_file or -e $tab_file);
 die "[coovar.pl] ERROR: GVS_VCF_FORMAT file $vcf_file not found.\n" unless (!$vcf_file or -e $vcf_file);
 
-execute("mkdir $out_dir") unless (-d $out_dir);
-execute("mkdir $out_dir/intermediate-files") unless (-d "$out_dir/intermediate-files");
+mkdir("$out_dir") unless (-d $out_dir);
+mkdir("$out_dir/intermediate-files") unless (-d "$out_dir/intermediate-files");
 
 # index reference FASTA
 print "[coovar.pl] Indexing FASTA file $dna_file on ";
@@ -128,10 +134,10 @@ if(defined $vcf_file)
     $del_file = "$out_dir/intermediate-files/".basename($vcf_file) .	'.del';
 }
 
-execute("mkdir $out_dir/snps") unless (-d "$out_dir/snps");
-execute("mkdir $out_dir/insertions") unless (-d "$out_dir/insertions");
-execute("mkdir $out_dir/deletions") unless (-d "$out_dir/deletions");
-execute("mkdir $out_dir/transcripts") unless (-d "$out_dir/transcripts");
+mkdir("$out_dir/snps") unless (-d "$out_dir/snps");
+mkdir("$out_dir/insertions") unless (-d "$out_dir/insertions");
+mkdir("$out_dir/deletions") unless (-d "$out_dir/deletions");
+mkdir("$out_dir/transcripts") unless (-d "$out_dir/transcripts");
 
 print "[coovar.pl] Checking consistency of GV files on ";
 print localtime()."\n";
@@ -147,7 +153,7 @@ $del_file = "$out_dir/deletions/kept_" . basename($del_file);
 
 print "[coovar.pl] Extracting cDNA sequence from reference on ";
 print localtime()."\n";
-execute("perl $prog_dir/scripts/extract-cdna.pl $exon_file $dna_file $out_dir");
+execute("perl $prog_dir/scripts/extract-cdna.pl $exon_file $dna_file $out_dir $feature_type $feature_source");
 
 print "[coovar.pl] Applying SNPs to cDNA sequences on ";
 print localtime()."\n";
@@ -169,7 +175,7 @@ if($circos == 1)
 {
 	print "[coovar.pl] Generating CIRCOS files for SNPs, insertions, deletions and coding regions on ";
 	print localtime()."\n";
-	execute("perl $prog_dir/scripts/parse2circos.pl $snp_file $ins_file $del_file $exon_file $dna_file $out_dir"); 
+	execute("perl $prog_dir/scripts/parse2circos.pl $snp_file $ins_file $del_file $out_dir/intermediate-files/sorted_gff3.tmp $dna_file $out_dir"); 
 }
 
 print "[coovar.pl] Categorized GVs can be found in $out_dir/categorized-gvs.gvf\n";

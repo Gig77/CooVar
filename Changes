@@ -1,5 +1,8 @@
 Revision history for CooVar.
 
+0.06 Thu Nov 15 11:07:00 2012 
+	- avoid unnecessary system() calls to ensure cross-platform compatibility
+	- additional CooVar parameters --feature_source and --feature_type to filter input GFF/GTF
 0.05 Mon Oct 22 11:36:00 2012 
 	- first version for public release; includes several bug fixes and test cases
 0.01  Tue Feb 15 13:00:00 2011

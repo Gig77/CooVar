@@ -1,4 +1,4 @@
-CooVar version 0.05 (Oct 22th, 2012)
+CooVar version 0.06 (Nov 15th, 2012)
 ====================================
 
 (0) INSTALL
@@ -16,8 +16,8 @@ CooVar version 0.05 (Oct 22th, 2012)
 
 To install CooVar, open a Linux terminal and run the following commands:
 
-tar xvf CooVar-0.05.tar.gz
-cd coovar-0.05
+tar xvf CooVar-0.06.tar.gz
+cd coovar-0.06
 chmod +x scripts/* coovar.pl
 
 The program itself is a Perl script and requires the following Perl modules to be 
@@ -87,10 +87,9 @@ is automatically inferred from the genome size (interval length = genome size / 
 (4) HOW TO RUN IT
 -----------------
 
- ./coovar.pl -e EXONS_GFF -r REFERENCE_FASTA (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [-o OUTPUT_DIRECTORY] [--circos]
+ ./coovar.pl -e EXONS_GFF -r REFERENCE_FASTA (-t GVS_TAB_FORMAT | -v GVS_VCF_FORMAT) [-o OUTPUT_DIRECTORY] [--circos] [--feature_source] [--feature_type]
 
-The -o and --circos options are optional. Writing Circos data files is pursued as the very last step, after all the genomic variants 
-were applied to the transcripts. 
+Parameters in brackets [] are optional.  
 
 (5) INPUT
 ---------
@@ -132,8 +131,8 @@ chr1    hg18_ensGene    CDS     67131500        67131684        0.000000        
 chr1    hg18_ensGene    CDS     67143472        67143646        0.000000        -       1       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 chr1    hg18_ensGene    CDS     67162933        67163102        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 
-IMPORTANT: Note that CooVar ignores all lines in the exon file that are not of type 'CDS' (this is currently hardcoded in the CooVar perl scripts). 
-           Also, make sure that different coding exons belonging to the same transcript have the same ID.
+IMPORTANT: Note that by default CooVar ignores all lines in the exon file that are not of type 'CDS'. This behavior can be changed using the 
+           --feature_source and --feature_type parameter. Also, make sure that different coding exons belonging to the same transcript have the same ID.
 
 If the gene attribute is specified ('gene=' in gff3 or 'gene_id' in gtf) then this gene ID is carried over to the transcripts.gff3
 output file. This is useful if one wants to know the identity of genes effected by GVs in addition to affected transcripts.  
@@ -229,6 +228,20 @@ does not exist, CooVar creates it. If omitted, output files are written to a sub
 named "output_YYYYMMDD_hhmmss", whereas YYYY, MM, DD, hh, mm, ss denote year, month, day, hour, minute, and second of the
 current date/time.
 
+(5.5) Specifying feature source and feature type
+------------------------------------------------
+Parameter: --feature_source (optional; no default value)
+           --feature_type   (optional; default: 'CDS')
+
+If --feature_source and --feature_type are not specified, CooVar by default retains only features of type 'CDS' from the 
+input GFF/GTF file, assuming that these features represent coding exons of protein-coding transcripts. 
+
+If --feature_source is specified, CooVar considers only features of that source (= 2nd column of input GFF/GTF).  
+
+If --feature_type is specified, Coovar considers only features of that type (= 3rd column of input GFF/GTF). The default is 'CDS'.
+
+These two parameters can also be used in combination. 
+
 (6) OUTPUT
 ----------
 
@@ -267,7 +280,7 @@ The output of CooVar ("CV") is structured as follows:
 |   |-- reference_peptides.fasta: reference peptide for each transcript.
 |   |-- variant_peptides.fasta: variant peptide for each transcript.
 |   |-- reference_variant.alignment: alignment of the reference and variant (i.e. all GVs applied) cDNA
-|   |-- [exon_file_name].circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
+|   |-- exons.circos: Circos frequency file for exons on a bp basis. Designed for heatmap visualization.
 |   `-- variant.stat: distribution of early stop codons along proteins, frequency of different ORF status and summary of impact of GVs on transcripts
 
 (6.1) transcripts.gff3 and categorized-gvs.gvf

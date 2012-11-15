@@ -9,6 +9,8 @@ print "[extract-cdna.pl] Start executing script on ";
 print localtime()."\n";
 
 my $out_dir = $ARGV[2] or die "[extract-cdna.pl] output directory not specified\n";
+my $feature_type = $ARGV[3] or die "[extract-cdna.pl] feature type not specified\n"; 
+my $feature_source = $ARGV[4]; # optional 
 
 #my %invalidate_first_codon;
 my $db = Bio::DB::Fasta->new($ARGV[1])
@@ -136,14 +138,15 @@ sub filter_cds
 	while(<IN>)
 	{
 		next if (/^\#/);
-		if (/^([^\t]+)\t([^\t]+)\t(cds)\t(\d+)/i)
+		if (/^([^\t]+)\t([^\t]+)\t($feature_type)\t(\d+)/i)
 		{
+			next if ($feature_source and $feature_source ne $2);
 			push(@cds, [$1, $4, $_]);
 		}
 	}
 	close(IN);
 
-	die ("[extract-cdna.pl] ERROR: Could not find coding sequence (CDS) entries in file $in. Please make sure that this files contains features of type 'CDS' (see README).\n")
+	die ("[extract-cdna.pl] ERROR: Could not find coding sequence (CDS) entries in file $in. Please make sure that this files contains features of type '$feature_type' ".($feature_source ? "and of source '$feature_source' " : "")."(see README).\n")
 		if (@cds == 0);
 	
 	# sort entries
