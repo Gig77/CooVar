@@ -1,4 +1,4 @@
-CooVar version 0.06 (Nov 15th, 2012)
+CooVar version 0.07 (Nov 20th, 2012)
 ====================================
 
 (0) INSTALL
@@ -16,8 +16,8 @@ CooVar version 0.06 (Nov 15th, 2012)
 
 To install CooVar, open a Linux terminal and run the following commands:
 
-tar xvf CooVar-0.06.tar.gz
-cd coovar-0.06
+tar xvf CooVar-0.07.tar.gz
+cd coovar-0.07
 chmod +x scripts/* coovar.pl
 
 The program itself is a Perl script and requires the following Perl modules to be 
