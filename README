@@ -132,7 +132,8 @@ chr1    hg18_ensGene    CDS     67143472        67143646        0.000000        
 chr1    hg18_ensGene    CDS     67162933        67163102        0.000000        -       0       gene_id "ENST00000371026"; transcript_id "ENST00000371026"; 
 
 IMPORTANT: Note that by default CooVar ignores all lines in the exon file that are not of type 'CDS'. This behavior can be changed using the 
-           --feature_source and --feature_type parameter. Also, make sure that different coding exons belonging to the same transcript have the same ID.
+           --feature_source and --feature_type program parameter. Also, make sure that different coding exons belonging to the same transcript have 
+           (a) the same 'transcript_id' (in case of a GTF input file) or (b) either the same 'ID' (GFF2 input) or the same 'Parent' ID (GFF3 input). 
 
 If the gene attribute is specified ('gene=' in gff3 or 'gene_id' in gtf) then this gene ID is carried over to the transcripts.gff3
 output file. This is useful if one wants to know the identity of genes effected by GVs in addition to affected transcripts.  

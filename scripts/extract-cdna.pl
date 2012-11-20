@@ -199,8 +199,11 @@ while(<D>)
 	my $id;
 	for(my $i=0;$i<@data;$i++)
 	{
-		next if ($data[$i]!~/(ID\=|Parent\=|transcript_id\ )([^;\s]+)/);
-		$id = $2;
+#		next if ($data[$i]!~/(ID\=|Parent\=|transcript_id\ )([^;\s]+)/);
+#		$id = $2;
+		($id) = $data[$i] =~ /parent=([^;\s]+)/i; # check for parent ID first
+		(my $tmp, $id) = $data[$i] =~ /(\sID\=|transcript_id\ )([^;\s]+)/i if (!$id);
+		next if (!$id);
 		$id=~s/\"//g;
 		last;
 	}
@@ -335,7 +338,6 @@ for my $chr (sort keys %chrom)
 
 		print ORI_PFA '>',"$transcripts[$i]\t$exon_contig{$transcripts[$i]}\t$info[0]\t$info[1]\t$exon_strand{$transcripts[$i]}\n";
 		print ORI_PFA lc($info[3]);
-		$exons ++;
 
 		print GFF3_TRANS "$exon_contig{$transcripts[$i]}\tCooVar\tmRNA\t";
 		print GFF3_TRANS "$info[0]\t$info[1]\t\.\t$exon_strand{$transcripts[$i]}\t\.\tID\=$transcripts[$i]";
@@ -349,6 +351,7 @@ for my $chr (sort keys %chrom)
 			my $start_ex = $1;
 			my $end_ex = $2;
 			print GFF3_TRANS "$start_ex\t$end_ex\t\.\t$exon_strand{$transcripts[$i]}\t\.\tParent\=$transcripts[$i]\n";
+			$exons ++;
 		}
 
 

@@ -1,5 +1,7 @@
 Revision history for CooVar.
 
+0.07 Thu Nov 20 11:50:00 2012 
+	- bugfix: recognize GFF3 input features with different IDs but same parent IDs as exons belonging to the same transcript
 0.06 Thu Nov 15 11:07:00 2012 
 	- avoid unnecessary system() calls to ensure cross-platform compatibility
 	- additional CooVar parameters --feature_source and --feature_type to filter input GFF/GTF
