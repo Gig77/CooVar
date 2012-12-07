@@ -188,24 +188,14 @@ while(<D>)
 {
 	chomp($_);
 	my @line=split(/\t/,$_);
-	my @data=split(/\;/,$line[8]);
-	
-	if (scalar(@data) == 0)
+
+	my ($id) = $line[8] =~ /[;\s]parent=([^;\s]+)/i; # check for parent ID first
+	(my $tmp, $id) = $line[8] =~ /[;\s](ID=|transcript_id )([^;\s]+)/i if (!$id);
+	$id=~s/\"//g;
+	if (!$id)
 	{
-		print "[extract-cdna.pl] WARNING: could not parse input line from file $ARGV[0]: $_\n";
+		print "[extract-cdna.pl] WARNING: could not parse transcript id from following line:\n$line[8]\n";
 		next;		
-	}
-	
-	my $id;
-	for(my $i=0;$i<@data;$i++)
-	{
-#		next if ($data[$i]!~/(ID\=|Parent\=|transcript_id\ )([^;\s]+)/);
-#		$id = $2;
-		($id) = $data[$i] =~ /parent=([^;\s]+)/i; # check for parent ID first
-		(my $tmp, $id) = $data[$i] =~ /(\sID\=|transcript_id\ )([^;\s]+)/i if (!$id);
-		next if (!$id);
-		$id=~s/\"//g;
-		last;
 	}
 	my ($start,$end);
 	

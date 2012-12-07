@@ -114,7 +114,7 @@ sub load_cds
 		for(my $i=0;$i<@data;$i++)
 		{
 			($id) = $data[$i] =~ /parent=([^;\s]+)/i; # check for parent ID first
-			(my $tmp, $id) = $data[$i] =~ /(\sID\=|transcript_id\ )([^;\s]+)/i if (!$id);
+			(my $tmp, $id) = $data[$i] =~ /(\s*ID\=|transcript_id\ )([^;\s]+)/i if (!$id);
 			next if (!$id);
 			$id=~s/\"//g;
 			last;
